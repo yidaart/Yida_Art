@@ -220,7 +220,7 @@
             </div>
             <div class="form-group">
                 <label>挂画预览</label>
-                <input type="file" id="paintingImageInput" accept="image/png">
+                <input type="file" id="paintingImageInput" accept="image/*">
             </div>
             <button id="calculateButton">开始计算</button>
             <div id="loading">计算中...</div>
@@ -229,7 +229,7 @@
         </div>
     </div>
     <div class="simulation-container-wrapper">
-        <h3>简易示例图 (添加设计实景效果图)</h3>
+        <h3>简易示例图 (扫码设计实景效果图)</h3>
         <div class="simulation-container" id="simulation">
             <svg id="simulationSvg" class="simulation-svg" style="display:none;"></svg>
         </div>
@@ -322,12 +322,12 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            if (!file.type.startsWith('image/png')) {
-                errorDiv.textContent = '请上传 PNG 格式的图片！';
-                paintingImageInput.value = '';
-                paintingImageData = null;
-                return;
-            }
+            if (!file.type.startsWith('image/')) {
+    errorDiv.textContent = '请上传图片格式的文件！';
+    paintingImageInput.value = '';
+    paintingImageData = null;
+    return;
+}
 
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -447,9 +447,8 @@
                     <p>画框颜色：${frameColorSelect.options[frameColorSelect.selectedIndex].text}</p>
                     <p><b>建议尺寸：宽 ${displayWidth} cm × 高 ${displayHeight} cm</b></p>
                     <p>推荐挂画高度：<span id="hangHeightValue">${initialHangHeight}</span> cm</p>
-                    <hr>
-                    <small>输入参数：参照物宽度 ${referenceWidth}cm, 墙宽 ${actualWallWidth}cm, 层高 ${wallHeight}cm</small><br>
-                    <small>提示：可拖拽挂画调整位置，长按可保存图片。</small>
+                   
+                  
                 `;
 
                 currentHangHeightValueSpan = document.getElementById('hangHeightValue');
