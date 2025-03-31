@@ -1,4 +1,4 @@
-<!DOCTYPE html>   <！DOCTYPE html >
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -341,7 +341,7 @@
                     displayHeight = roundToNearest10(displayWidth * 1.4);
                 } else if (style === 'square') {
                     displayWidth = roundToNearest10(referenceWidth * styleRatio);
-                    displayHeight = displayWidth;显示高度 = 显示宽度
+                    displayHeight = displayWidth;
                 } else {
                     displayWidth = roundToNearest10(referenceWidth * styleRatio);
                     displayHeight = roundToNearest10(displayWidth * 0.5);
@@ -607,79 +607,79 @@
         function saveSvgAsPng(svgElement, fileName) {
             // 获取 SVG 的尺寸
             const width = parseInt(svgElement.style.width);
-            const   常量 height   高度 = parseInt(svgElement.style   风格.height   高度);
+            const height = parseInt(svgElement.style.height);
 
             // 创建一个 canvas 元素
-            const   常量   常量 canvas   帆布 = document   文档.createElement('canvas'   “画布”   “画布”);
-            canvas   帆布.width   宽度   宽度 = width   宽度;
-            canvas   帆布.height   高度   高度 = height   高度;
-            const   常量   常量 ctx = canvas   帆布.getContext('2d'   “二维”   “二维”);
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
 
             // 将 SVG 转换为 XML 字符串
-            const   常量   常量 svgData = new   新 XMLSerializer().serializeToString(svgElement);字体族：Arial，无衬线字体；
-            const   常量   常量 svgBlob = new   新 Blob   团([svgData], { type   类型: 'image/svg+xml;charset=utf-8' });   填充:30 px;
-            const   常量   常量 url = URL.createObjectURL(svgBlob);
-   Margin: 0 auto；
-            // 创建一个临时的 img 元素来加载 SVG   显示:flex;
-            const   常量   常量 img = new   新 Image   图像();   差距:30 px;
-            img.onload = function   函数   函数 () {
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            // 创建一个临时的 img 元素来加载 SVG
+            const img = new Image();
+            img.onload = function () {
                 // 在 canvas 上绘制图片
                 ctx.fillStyle = '#fff'; // 设置白色背景
-                ctx.fillRect(0, 0, width   宽度, height   高度);
-                ctx.drawImage(img, 0, 0, width   宽度, height   高度);
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
 
                 // 将 canvas 转换为 PNG
-                const   常量   常量 pngDataUrl = canvas   帆布.toDataURL('image/png'   图像/ png   图像/ png);   显示:flex;
-   flex-direction: column； 翻译成中文为：主轴方向：列。
-                // 创建一个隐藏的下载链接   align-items： 居中
-                const   常量   常量 downloadLink = document   文档.createElement('a'   “一个”   “一个”);   差距:15 px;
-                downloadLink.href = pngDataUrl;   最小高度:100%;
-                downloadLink.download   下载 = fileName   文件名 || 'painting-simulation.png';
-                document   文档.body   身体   身体.appendChild   列表末尾(downloadLink);
-                downloadLink.click   点击();   背景：#f5f5f5
-                document   文档.body   身体   身体.removeChild(downloadLink);   填充:20 px;
-   圆角半径：10 像素；
+                const pngDataUrl = canvas.toDataURL('image/png');
+
+                // 创建一个隐藏的下载链接
+                const downloadLink = document.createElement('a');
+                downloadLink.href = pngDataUrl;
+                downloadLink.download = fileName || 'painting-simulation.png';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+
                 // 释放 URL 对象
                 URL.revokeObjectURL(url);
-            };   margin   保证金-bottom   底: 15 像素
+            };
             img.src = url;
         }
-   显示:块;
+
         // 新增：长按保存功能
-        function   函数   函数 addLongPressListener() {
-            let   让   让 isLongPress = false   假   假;
-   宽度:100%;
-            // 移动端：长按事件   填充:8 px;
-            simulationContainer.addEventListener('touchstart'   ’touchstart’, (event   事件) => {   边框：1 像素宽的实线，颜色为 #ddd；
-                if   如果   如果 (simulationSvg.style   风格   风格.display   显示   显示 === 'none'   “没有”   “没有”) return   返回   返回; // 如果 SVG 未显示，不触发
-   盒模型尺寸计算方式：内容、内边距和边框的总和决定元素的尺寸。
-                isLongPress = false   假   假;
+        function addLongPressListener() {
+            let isLongPress = false;
+
+            // 移动端：长按事件
+            simulationContainer.addEventListener('touchstart', (event) => {
+                if (simulationSvg.style.display === 'none') return; // 如果 SVG 未显示，不触发
+
+                isLongPress = false;
                 longPressTimer = setTimeout(() => {
-                    isLongPress = true   真正的   真正的;背景颜色：#4CAF50
-                    saveSvgAsPng(simulationSvg, 'painting-simulation.png');   颜色:白色;
-                }, LONG_PRESS_DURATION);   填充：10px 20px；
-            });   边界:没有;
+                    isLongPress = true;
+                    saveSvgAsPng(simulationSvg, 'painting-simulation.png');
+                }, LONG_PRESS_DURATION);
+            });
 
-            simulationContainer.addEventListener('touchend'   ’touchend’, () => {   光标:指针;
-                clearTimeout(longPressTimer);   宽度:100%;
-            });   字体大小:16 px;
+            simulationContainer.addEventListener('touchend', () => {
+                clearTimeout(longPressTimer);
+            });
 
-            simulationContainer.addEventListener('touchmove'   “touchmove”, () => {
-                clearTimeout(longPressTimer);背景颜色：#45a049
+            simulationContainer.addEventListener('touchmove', () => {
+                clearTimeout(longPressTimer);
             });
 
             // 桌面端：右键保存提示
-            simulationContainer.addEventListener('contextmenu'   ‘contextmenu, (event   事件) => {   填充:15 px;
-                if   如果   如果 (simulationSvg.style   风格   风格.display   显示   显示 === 'none'   “没有”   “没有”) return   返回   返回; // 如果 SVG 未显示，不触发   背景:白色;
+            simulationContainer.addEventListener('contextmenu', (event) => {
+                if (simulationSvg.style.display === 'none') return; // 如果 SVG 未显示，不触发
 
-                event   事件.preventDefault();   边框：1 像素宽的实线，颜色为 #eee；
-                if   如果   如果 (confirm   确认('是否保存挂画效果图？')) {
+                event.preventDefault();
+                if (confirm('是否保存挂画效果图？')) {
                     saveSvgAsPng(simulationSvg, 'painting-simulation.png');
-                }   显示:没有;
-            });   text   文本-align:中心;
+                }
+            });
         }
 
-        init   初始化();
-    </script   脚本>   颜色:红色;
+        init();
+    </script>
 </body>
-        </html>
+</html>
