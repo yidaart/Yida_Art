@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>艺达·ART丨智能挂画</title>
+    <title>艺达·ART丨智能挂画系统</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -175,7 +175,7 @@
 <body>
     <div class="calculator-container">
         <div class="calculator">
-            <h2>艺达·ART丨智能挂画</h2>
+            <h2>艺达·ART丨智能挂画系统</h2>
             <div class="form-group">
                 <label>选择场景</label>
                 <select id="scene">
@@ -200,19 +200,19 @@
             <div class="form-group">
                 <label>挂画类型</label>
                 <select id="styleSelect">
-                    <option value="long">纵向挂画 (1:1.4)</option>
-                    <option value="square">正方形 (1:1)</option>
-                    <option value="landscape">横幅型 (2:1)</option>
+                    <option value="long">竖版挂画 </option>
+                    <option value="square">方形挂画 </option>
+                    <option value="landscape">横版挂画 </option>
                 </select>
             </div>
             <div class="form-group">
                 <label>画框颜色</label>
                 <select id="frameColorSelect">
-                    <option value="black">黑色</option>
-                    <option value="gold">金色</option>
-                    <option value="red">红色</option>
-                    <option value="natural">原木色</option>
-                    <option value="walnut">胡桃木色</option>
+                    <option value="black">黑色铝合金</option>
+                    <option value="gold">金色铝合金</option>
+                    <option value="red">红色铝合金</option>
+                    <option value="natural">原木色环保框</option>
+                    <option value="walnut">胡桃木环保框</option>
                 </select>
             </div>
             <div class="form-group">
@@ -221,7 +221,7 @@
             </div>
             <button id="calculateButton">开始计算</button>
             <div id="loading">计算中...</div>
-            <div class="result" id="result">请输入参数并计算</div>
+            <div class="result" id="result">请输入参照物宽度并计算</div>
             <div class="error-message" id="error"></div>
         </div>
     </div>
@@ -442,10 +442,10 @@
                     <p>场景：${sceneSelect.options[sceneSelect.selectedIndex].text}</p>
                     <p>挂画类型：${styleSelect.options[styleSelect.selectedIndex].text}</p>
                     <p>画框颜色：${frameColorSelect.options[frameColorSelect.selectedIndex].text}</p>
-                    <p><b>建议尺寸：宽 ${displayWidth} cm × 高 ${displayHeight.toFixed(1)} cm</b></p>
+                    <p><b>建议尺寸：宽 ${displayWidth} cm × 高 ${displayHeight} cm</b></p>
                     <p>推荐挂画高度：<span id="hangHeightValue">${initialHangHeight}</span> cm</p>
                     <hr>
-                    <small>输入参数：参考宽度 ${referenceWidth}cm, 墙宽 ${actualWallWidth}cm, 层高 ${wallHeight}cm</small><br>
+                    <small>输入参数：参照物宽度 ${referenceWidth}cm, 墙宽 ${actualWallWidth}cm, 层高 ${wallHeight}cm</small><br>
                     <small>提示：可拖拽挂画调整位置，长按可保存图片。</small>
                 `;
 
