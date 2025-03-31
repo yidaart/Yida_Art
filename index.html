@@ -170,6 +170,9 @@
                 height: 250px;
             }
         }
+		#referenceWidthInput {
+    border: 2px solid #13af12; /* 橙红色边框 */
+}
     </style>
 </head>
 <body>
@@ -194,7 +197,7 @@
                 <input type="number" id="wallWidthInput" placeholder="请输入墙面宽度" value="350">
             </div>
             <div class="form-group">
-                <label>层高（cm）</label>
+                <label>房子层高（cm）</label>
                 <input type="number" id="wallHeightInput" placeholder="请输入层高" value="280">
             </div>
             <div class="form-group">
@@ -216,7 +219,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>上传您喜欢的画</label>
+                <label>挂画预览</label>
                 <input type="file" id="paintingImageInput" accept="image/png">
             </div>
             <button id="calculateButton">开始计算</button>
