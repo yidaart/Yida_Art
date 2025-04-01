@@ -80,7 +80,7 @@
             transform: rotate(-90deg);
         }
         .collapsible-content {
-            max-height: 500px; /* Large enough to fit content */
+            max-height: 500px;
             overflow: hidden;
             transition: max-height 0.3s ease, opacity 0.3s ease;
             opacity: 1;
@@ -480,9 +480,9 @@
                 <div class="collapsible-section">
                     <div class="collapsible-header" id="paintingSettingsHeader">
                         <span>挂画设置</span>
-                        <span class="toggle-icon">▼</span>
+                        <span class="toggle-icon collapsed">▶</span>
                     </div>
-                    <div class="collapsible-content" id="paintingSettingsContent">
+                    <div class="collapsible-content collapsed" id="paintingSettingsContent">
                         <div class="form-group">
                             <label>挂画宽度（cm，可选）</label>
                             <input type="number" id="customWidthInput" placeholder="自定义宽度 (可选)">
@@ -499,7 +499,7 @@
                                 <option value="red">红色铝合金</option>
                                 <option value="natural">原木色环保框</option>
                                 <option value="walnut">胡桃木环保框</option>
-                            </select>
+ KO               </select>
                         </div>
                         <div class="form-group">
                             <label>挂画预览</label>
@@ -525,16 +525,16 @@
         </div>
     </div>
     <script>
-        const SIZES = {
-            vertical: [{ w: 50, h: 70 }, { w: 60, h: 80 }, { w: 70, h: 100 }, { w: 80, h: 110 }, { w: 90, h: 130 }],
-            square: [70, 80, 90, 100, 110, 120],
-            landscape: [{ w: 100, h: 50 }, { w: 120, h: 60 }, { w: 140, h: 70 }, { w: 160, h: 80 }, { w: 180, h: 90 }]
-        };
         const SCENE_RATIOS = {
-            livingRoom: { long: 1/3, square: 0.4, landscape: 0.618 },
-            bedroom: { long: 1/2, square: 0.4, landscape: 0.618 },
-            diningRoom: { long: 1/2, square: 0.4, landscape: 0.618 },
-            entrance: { long: 0.8, square: 0.587, landscape: 0.618 }
+            livingRoom: { long: 1/4, square: 0.35, landscape: 0.618 },
+            bedroom: { long: 1/4, square: 0.30, landscape: 0.618 },
+            diningRoom: { long: 1/3, square: 0.40, landscape: 0.618 },
+            entrance: { long: 0.6, square: 0.587, landscape: 0.618 }
+        };
+        const HEIGHT_RATIOS = {
+            long: 1.4,
+            square: 1,
+            landscape: 0.5
         };
         const SCENE_COLORS = {
             livingRoom: { room: '#F5EDE3', furniture: '#A68C6D', painting: '#D9A7A7' },
@@ -552,7 +552,7 @@
             black: '#000000',
             gold: '#D4AF37',
             red: '#C41E3A',
-            natural: '#DEB887',
+            natural: '#9f7b53',
             walnut: '#5C4033'
         };
         const MAX_SVG_WIDTH = 750;
@@ -612,8 +612,6 @@
             paintingImageInput.addEventListener('change', handleImageUpload);
             customWidthInput.addEventListener('input', updatePreview);
             customHeightInput.addEventListener('input', updatePreview);
-
-            // Add collapsible toggle functionality
             paintingSettingsHeader.addEventListener('click', togglePaintingSettings);
         }
 
@@ -706,15 +704,8 @@
                     return;
                 }
 
-                // Check scene and style compatibility
-                const ratioData = SCENE_RATIOS[scene];
-                if (!ratioData || !ratioData[style]) {
-                    errorDiv.textContent = "当前场景不支持所选挂画类型。";
-                    loadingDiv.style.display = 'none';
-                    return;
-                }
-
-                const styleRatio = ratioData[style];
+                const styleRatio = SCENE_RATIOS[scene][style];
+                const heightRatio = HEIGHT_RATIOS[style];
                 let displayWidth, displayHeight;
 
                 // Calculate painting dimensions
@@ -722,50 +713,14 @@
                     displayWidth = roundToNearest10(customWidth);
                     displayHeight = roundToNearest10(customHeight);
                 } else {
-                    let idealWidth = referenceWidth * styleRatio;
-
-                    if (style === 'long') {
-                        displayWidth = roundToNearest10(idealWidth);
-                        displayHeight = roundToNearest10(displayWidth * 1.4);
-                    } else if (style === 'square') {
-                        displayWidth = roundToNearest10(referenceWidth * styleRatio);
-                        displayHeight = displayWidth;
-                    } else if (style === 'landscape') {
-                        displayWidth = roundToNearest10(idealWidth);
-                        displayHeight = roundToNearest10(displayWidth * 0.5);
-                    } else {
-                        throw new Error("不支持的挂画类型：" + style);
-                    }
+                    displayWidth = roundToNearest10(referenceWidth * styleRatio);
+                    displayHeight = roundToNearest10(displayWidth * heightRatio);
 
                     // Adjust size if painting is too wide for the wall
                     if (displayWidth > actualWallWidth * 0.9) {
                         console.warn("推荐的挂画宽度过大，正在调整尺寸...");
-                        let availableSizes = [];
-                        if (style === 'long') {
-                            availableSizes = SIZES.vertical.filter(s => s.w < displayWidth).sort((a, b) => b.w - a.w);
-                        } else if (style === 'square') {
-                            availableSizes = SIZES.square.filter(s => s < displayWidth).sort((a, b) => b - a);
-                        } else if (style === 'landscape') {
-                            availableSizes = SIZES.landscape.filter(s => s.w < displayWidth).sort((a, b) => b.w - a.w);
-                        }
-
-                        if (availableSizes.length > 0) {
-                            if (style === 'square') {
-                                displayWidth = availableSizes[0];
-                                displayHeight = displayWidth;
-                            } else if (style === 'long') {
-                                displayWidth = availableSizes[0].w;
-                                displayHeight = roundToNearest10(displayWidth * 1.4);
-                            } else if (style === 'landscape') {
-                                displayWidth = availableSizes[0].w;
-                                displayHeight = roundToNearest10(displayWidth * 0.5);
-                            }
-                            displayWidth = roundToNearest10(displayWidth);
-                        } else {
-                            errorDiv.textContent = "无法找到适合的挂画尺寸，请调整参考宽度或墙面宽度。";
-                            loadingDiv.style.display = 'none';
-                            return;
-                        }
+                        displayWidth = roundToNearest10(actualWallWidth * 0.9);
+                        displayHeight = roundToNearest10(displayWidth * heightRatio);
                     }
                 }
 
@@ -816,6 +771,8 @@
 
                 const customWidth = parseFloat(customWidthInput.value) || 0;
                 const customHeight = parseFloat(customHeightInput.value) || 0;
+                const styleRatio = SCENE_RATIOS[lastScene][lastStyle];
+                const heightRatio = HEIGHT_RATIOS[lastStyle];
                 let displayWidth, displayHeight;
 
                 if (customWidth > 0 && customHeight > 0) {
@@ -826,48 +783,12 @@
                     displayWidth = roundToNearest10(customWidth);
                     displayHeight = roundToNearest10(customHeight);
                 } else {
-                    const styleRatio = SCENE_RATIOS[lastScene][lastStyle];
-                    let idealWidth = lastRefWidth * styleRatio;
-
-                    if (lastStyle === 'long') {
-                        displayWidth = roundToNearest10(idealWidth);
-                        displayHeight = roundToNearest10(displayWidth * 1.4);
-                    } else if (lastStyle === 'square') {
-                        displayWidth = roundToNearest10(lastRefWidth * styleRatio);
-                        displayHeight = displayWidth;
-                    } else if (lastStyle === 'landscape') {
-                        displayWidth = roundToNearest10(idealWidth);
-                        displayHeight = roundToNearest10(displayWidth * 0.5);
-                    } else {
-                        throw new Error("不支持的挂画类型：" + lastStyle);
-                    }
+                    displayWidth = roundToNearest10(lastRefWidth * styleRatio);
+                    displayHeight = roundToNearest10(displayWidth * heightRatio);
 
                     if (displayWidth > lastWallW * 0.9) {
-                        let availableSizes = [];
-                        if (lastStyle === 'long') {
-                            availableSizes = SIZES.vertical.filter(s => s.w < displayWidth).sort((a, b) => b.w - a.w);
-                        } else if (lastStyle === 'square') {
-                            availableSizes = SIZES.square.filter(s => s < displayWidth).sort((a, b) => b - a);
-                        } else if (lastStyle === 'landscape') {
-                            availableSizes = SIZES.landscape.filter(s => s.w < displayWidth).sort((a, b) => b.w - a.w);
-                        }
-
-                        if (availableSizes.length > 0) {
-                            if (lastStyle === 'square') {
-                                displayWidth = availableSizes[0];
-                                displayHeight = displayWidth;
-                            } else if (lastStyle === 'long') {
-                                displayWidth = availableSizes[0].w;
-                                displayHeight = roundToNearest10(displayWidth * 1.4);
-                            } else if (lastStyle === 'landscape') {
-                                displayWidth = availableSizes[0].w;
-                                displayHeight = roundToNearest10(displayWidth * 0.5);
-                            }
-                            displayWidth = roundToNearest10(displayWidth);
-                        } else {
-                            errorDiv.textContent = "无法找到适合的挂画尺寸，请调整参考宽度或墙面宽度。";
-                            return;
-                        }
+                        displayWidth = roundToNearest10(lastWallW * 0.9);
+                        displayHeight = roundToNearest10(displayWidth * heightRatio);
                     }
                 }
 
@@ -994,9 +915,9 @@
                         <rect x="${furnitureWidth * 0.28}" y="${furnitureHeight * 0.35}" width="${furnitureWidth * 0.06}" height="${furnitureHeight * 0.55}" fill="${darkenColor(colors.furniture, 20)}" rx="8"/>
                         <rect x="${furnitureWidth * 0.66}" y="${furnitureHeight * 0.35}" width="${furnitureWidth * 0.06}" height="${furnitureHeight * 0.55}" fill="${darkenColor(colors.furniture, 20)}" rx="8"/>
                         <path d="M${-furnitureWidth * 0.25},${furnitureHeight * 0.15} Q${-furnitureWidth * 0.15},${furnitureHeight * 0.05} ${-furnitureWidth * 0.05},${furnitureHeight * 0.15} L${-furnitureWidth * 0.05},${furnitureHeight * 0.45} Q${-furnitureWidth * 0.15},${furnitureHeight * 0.35} ${-furnitureWidth * 0.25},${furnitureHeight * 0.45} Z" fill="${darkenColor(colors.furniture, 10)}" filter="url(#shadow)"/>
-                        <rect x="${-furnitureWidth * 0.25}" y="${furnitureHeight * 0.45}" width="${furnitureWidth * 0.2}" height="${furnitureHeight * 0.25}" fill="url(#chairGradient)" rx="4"/>
-                        <rect x="${-furnitureWidth * 0.23}" y="${furnitureHeight * 0.7}" width="${furnitureWidth * 0.03}" height="${furnitureHeight * 0.2}" fill="${darkenColor(colors.furniture, 30)}" rx="2"/>
-                        <rect x="${-furnitureWidth * 0.08}" y="${furnitureHeight * 0.7}" width="${furnitureWidth * 0.03}" height="${furnitureHeight * 0.2}" fill="${darkenColor(colors.furniture, 30)}" rx="2"/>
+                        <rect x="${furnitureWidth * 0.05}" y="${furnitureHeight * 0.45}" width="${furnitureWidth * 0.2}" height="${furnitureHeight * 0.25}" fill="url(#chairGradient)" rx="4"/>
+                        <rect x="${furnitureWidth * 0.07}" y="${furnitureHeight * 0.7}" width="${furnitureWidth * 0.03}" height="${furnitureHeight * 0.2}" fill="${darkenColor(colors.furniture, 30)}" rx="2"/>
+                        <rect x="${furnitureWidth * 0.22}" y="${furnitureHeight * 0.7}" width="${furnitureWidth * 0.03}" height="${furnitureHeight * 0.2}" fill="${darkenColor(colors.furniture, 30)}" rx="2"/>
                         <path d="M${furnitureWidth * 1.05},${furnitureHeight * 0.15} Q${furnitureWidth * 1.15},${furnitureHeight * 0.05} ${furnitureWidth * 1.25},${furnitureHeight * 0.15} L${furnitureWidth * 1.25},${furnitureHeight * 0.45} Q${furnitureWidth * 1.15},${furnitureHeight * 0.35} ${furnitureWidth * 1.05},${furnitureHeight * 0.45} Z" fill="${darkenColor(colors.furniture, 10)}" filter="url(#shadow)"/>
                         <rect x="${furnitureWidth * 1.05}" y="${furnitureHeight * 0.45}" width="${furnitureWidth * 0.2}" height="${furnitureHeight * 0.25}" fill="url(#chairGradient)" rx="4"/>
                         <rect x="${furnitureWidth * 1.07}" y="${furnitureHeight * 0.7}" width="${furnitureWidth * 0.03}" height="${furnitureHeight * 0.2}" fill="${darkenColor(colors.furniture, 30)}" rx="2"/>
@@ -1294,13 +1215,22 @@
         }
 
         function saveSvgAsPng(svgElement, fileName) {
-            const width = parseInt(svgElement.style.width);
-            const height = parseInt(svgElement.style.height);
+            const viewBox = svgElement.getAttribute('viewBox').split(' ').map(Number);
+            const viewBoxWidth = viewBox[2];
+            const viewBoxHeight = viewBox[3];
+            
+            const padding = 60;
+            const scaleFactor = 2;
+            const canvasWidth = (viewBoxWidth + padding * 2) * scaleFactor;
+            const canvasHeight = (viewBoxHeight + padding * 2) * scaleFactor;
 
             const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
             const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
             const svgData = new XMLSerializer().serializeToString(svgElement);
             const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
@@ -1308,9 +1238,8 @@
 
             const img = new Image();
             img.onload = function () {
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(0, 0, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
+                ctx.drawImage(img, padding * scaleFactor, padding * scaleFactor, 
+                            viewBoxWidth * scaleFactor, viewBoxHeight * scaleFactor);
 
                 const pngDataUrl = canvas.toDataURL('image/png');
                 const downloadLink = document.createElement('a');
