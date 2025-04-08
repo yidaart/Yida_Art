@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<div class="container max-w-6xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-lg">
+    <nav class="mb-4">
+        <a href="./index.html" class="text-primary hover:underline">返回智能挂画系统</a>
+    </nav>
+    <!-- 其余报价单内容 -->
+</div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>报价单 - 三千·ART / 艺达·ART</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+      @font-face {
+        font-family: 'LucideIcons';
+        src: url(https://cdn.jsdelivr.net/npm/lucide-static@latest/font/Lucide.ttf) format('truetype');
+      }
+      .lucide {
+        font-family: 'LucideIcons';
+        font-style: normal;
+        font-weight: normal;
+        font-variant: normal;
+        text-transform: none;
+        line-height: 1;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      input[type="file"]::file-selector-button {
+        @apply px-3 py-1.5 mr-2 text-sm font-semibold bg-blue-900 text-white border border-transparent rounded-md cursor-pointer hover:bg-blue-800 transition-colors duration-200 ease-in-out;
+      }
+      input[type=number]::-webkit-inner-spin-button,
+      input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type=number] {
+        -moz-appearance: textfield;
+      }
+      *:focus-visible {
+         outline: 2px solid #2563eb;
+         outline-offset: 2px;
+      }
+      @media (max-width: 640px) {
+        #quoteTable thead {
+          display: none;
+        }
+        #quoteTable tbody, #quoteTable tr {
+          display: block;
+        }
+        #quoteTable tr {
+          @apply border border-gray-200 rounded-lg shadow-sm mb-4 p-4;
+        }
+        #quoteTable td {
+          display: block;
+          text-align: right;
+          padding-left: 40%;
+          position: relative;
+          @apply py-2 px-1 border-b border-gray-100;
+        }
+        #quoteTable td:last-child {
+          @apply border-b-0;
+        }
+        #quoteTable td::before {
+          content: attr(data-label);
+          position: absolute;
+          left: 0.5rem;
+          width: 35%;
+          padding-right: 0.5rem;
+          text-align: left;
+          font-weight: 600;
+          @apply text-sm text-gray-600 whitespace-nowrap;
+        }
+         #quoteTable td[data-label="序号"] {
+            @apply text-lg font-bold text-primary text-left;
+            padding-left: 0.5rem;
+         }
+         #quoteTable td[data-label="序号"]::before {
+            display: none;
+         }
+         #quoteTable td[data-label="参数"] .param-group,
+         #quoteTable td[data-label="作品尺寸(cm)"] .size-group {
+            @apply mt-1 space-y-1 text-right;
+         }
+         #quoteTable td[data-label="参数"] .param-label,
+         #quoteTable td[data-label="作品尺寸(cm)"] div {
+             @apply flex justify-end items-center gap-2;
+         }
+          #quoteTable td[data-label="参数"] .param-label span,
+          #quoteTable td[data-label="作品尺寸(cm)"] span {
+             width: auto;
+             text-align: left;
+             @apply text-xs text-gray-500;
+         }
+          #quoteTable td[data-label="参数"] input,
+          #quoteTable td[data-label="作品尺寸(cm)"] input,
+          #quoteTable td[data-label="画作形式"] input,
+          #quoteTable td[data-label="数量"] input,
+          #quoteTable td[data-label="价格(￥)"] input {
+             @apply w-auto max-w-[150px] inline-block;
+         }
+          #quoteTable td[data-label="画芯构图"] {
+             text-align: center;
+             padding-left: 0.5rem;
+         }
+         #quoteTable td[data-label="画芯构图"]::before {
+             @apply text-center left-0 w-full mb-1;
+             position: relative;
+             display: block;
+         }
+         #quoteTable td[data-label="画芯构图"] input[type="file"] {
+             @apply w-full mt-1;
+         }
+         #quoteTable td[data-label="画芯构图"] .image-preview {
+             @apply h-12 w-12; /* 调整移动端预览图大小 */
+         }
+          #quoteTable td[data-label="操作"] {
+             text-align: center;
+             padding-left: 0.5rem;
+          }
+          #quoteTable td[data-label="操作"]::before {
+             display: none;
+          }
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'PingFang SC', 'Helvetica Neue', 'Arial', 'sans-serif'],
+            },
+            colors: {
+              primary: {
+                DEFAULT: '#003366',
+                hover: '#002244',
+                light: '#f0f5ff'
+              },
+              secondary: '#6b7280',
+              secondaryHover: '#4b5563',
+              accent: '#eab308',
+              excelHeader: '003366',
+              excelTotal: 'E0E7FF',
+              excelInfo: 'F3F4F6',
+              excelBorder: 'D1D5DB',
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 p-4 md:p-8">
+    <div class="container max-w-6xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-lg">
+        <div class="header text-center pb-6 border-b border-gray-200 mb-6">
+            <h1 id="quoteTitle" class="text-3xl md:text-4xl font-semibold text-primary">三千·ART报价单</h1>
+        </div>
+
+        <div class="info grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
+            <div class="flex items-center gap-2">
+                <label for="studioName" class="font-medium text-gray-700 whitespace-nowrap">报价单位:</label>
+                <select id="studioName" onchange="updateTitle()" class="block w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm">
+                    <option value="三千·ART">三千·ART</option>
+                    <option value="艺达·ART">艺达·ART</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-medium text-gray-700 whitespace-nowrap">联系电话:</span>
+                <span class="text-gray-900">18059018257</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <label for="customerName" class="font-medium text-gray-700 whitespace-nowrap">客户名称:</label>
+                <input type="text" id="customerName" placeholder="请输入客户名称" class="block w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm">
+            </div>
+             <div class="flex items-center gap-2">
+                <label for="customerAddress" class="font-medium text-gray-700 whitespace-nowrap">联系地址:</label>
+                <input type="text" id="customerAddress" placeholder="请输入联系地址" class="block w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm">
+            </div>
+        </div>
+
+        <p class="text-xs text-gray-500 mb-6">以下报价作为参考，如有任何问题请与我们联络。</p>
+
+        <div class="button-group flex flex-col sm:flex-row justify-end gap-3 mb-6">
+             <button class="btn flex items-center justify-center gap-1 px-4 py-2 bg-primary text-white rounded-lg shadow hover:bg-primary-hover transition duration-200 text-sm font-medium" onclick="addRow()">
+                 <span class="lucide"></span> 添加画作
+             </button>
+             <button class="btn flex items-center justify-center gap-1 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition duration-200 text-sm font-medium" onclick="exportToExcel()">
+                 <span class="lucide"></span> 导出Excel
+             </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm sm:border sm:shadow-sm"> 
+            <table id="quoteTable" class="w-full text-sm text-left text-gray-700">
+                 <thead class="bg-primary text-white uppercase text-xs tracking-wider hidden sm:table-header-group"> 
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-center">序号</th>
+                        <th scope="col" class="px-4 py-3">画作形式</th>
+                        <th scope="col" class="px-4 py-3">参数</th>
+                        <th scope="col" class="px-4 py-3">作品尺寸(cm)</th>
+                        <th scope="col" class="px-4 py-3 text-center">数量</th>
+                        <th scope="col" class="px-4 py-3 text-center">平方小计(m²)</th>
+                        <th scope="col" class="px-4 py-3 text-center">价格(￥)</th>
+                        <th scope="col" class="px-4 py-3 text-center">画芯构图</th>
+                        <th scope="col" class="px-4 py-3 text-center">操作</th>
+                    </tr>
+                </thead>
+                 <tbody id="quoteBody" class="bg-white divide-y divide-gray-200 sm:divide-y"> </tbody>
+            </table>
+        </div>
+
+        <div class="total mt-8 text-right space-y-2 text-base md:text-lg font-semibold text-primary">
+            <div>合计平方数: <span id="totalArea" class="inline-block min-w-[80px] text-right text-gray-900 font-bold">0.00</span> m²</div>
+            <div>合计小写: ￥<span id="totalPrice" class="inline-block min-w-[80px] text-right text-gray-900 font-bold">0</span></div>
+            <div>合计大写: <span id="totalPriceCN" class="text-gray-900 font-bold">零元</span></div>
+        </div>
+
+        <div class="footer mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div class="flex items-center gap-2">
+                <label for="quoter" class="font-medium text-gray-700 whitespace-nowrap">报价人:</label>
+                <input type="text" id="quoter" placeholder="请输入报价人" class="block w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm">
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-medium text-gray-700 whitespace-nowrap">报价日期:</span>
+                <span id="currentDate" class="text-gray-900"></span>
+            </div>
+            <div class="flex items-center gap-2">
+                 <label for="approver" class="font-medium text-gray-700 whitespace-nowrap">审批:</label>
+                 <input type="text" id="approver" placeholder="请输入审批人" class="block w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm">
+            </div>
+             <div class="flex items-center gap-2 col-span-1 sm:col-span-2 lg:col-span-1">
+                <span class="font-medium text-gray-700 whitespace-nowrap">公司地址:</span>
+                <span class="text-gray-900">福建省厦门市</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-medium text-gray-700 whitespace-nowrap">联系电话:</span>
+                <span class="text-gray-900">18059018257</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const UNIT_PRICE_PER_SQ_METER = 1600;
+        const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/100x100/f0f5ff/003366?text=Preview';
+
+        function toChineseNum(num) {
+            const chnNumChar = ["零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖"];
+            const chnUnitSection = ["", "万", "亿", "万亿", "亿亿"];
+            const chnUnitChar = ["", "拾", "佰", "仟"];
+            let unitPos = 0, strIns = '', chnStr = '', needZero = false;
+            if (num === 0) return chnNumChar[0] + '元';
+            let integerNum = Math.floor(num);
+            while (integerNum > 0) {
+                let section = integerNum % 10000;
+                if (needZero) chnStr = chnNumChar[0] + chnStr;
+                strIns = sectionToChinese(section, chnNumChar, chnUnitChar);
+                strIns += (section !== 0) ? chnUnitSection[unitPos] : chnUnitSection[0];
+                chnStr = strIns + chnStr;
+                needZero = (section < 1000 && section > 0);
+                integerNum = Math.floor(integerNum / 10000);
+                unitPos++;
+            }
+             chnStr += '元';
+             chnStr = chnStr.replace(/^壹拾/, '拾');
+             chnStr = chnStr.replace(/零(拾|佰|仟)/g, '零');
+             chnStr = chnStr.replace(/零{2,}/g, '零');
+             chnStr = chnStr.replace(/零([万亿])/g, '$1');
+             chnStr = chnStr.replace(/零+元/, '元');
+             chnStr = chnStr.replace(/亿万/, '亿');
+            if (chnStr.endsWith('零元')) chnStr = chnStr.slice(0, -2) + '元';
+            return chnStr;
+        }
+        function sectionToChinese(section, chnNumChar, chnUnitChar) {
+            let strIns = '', chnStr = '', unitPos = 0, zero = true;
+            while (section > 0) {
+                let v = section % 10;
+                if (v === 0) { if (!zero) { zero = true; chnStr = chnNumChar[v] + chnStr; } }
+                else { zero = false; strIns = chnNumChar[v]; strIns += chnUnitChar[unitPos]; chnStr = strIns + chnStr; }
+                unitPos++; section = Math.floor(section / 10);
+            }
+             if (chnStr.endsWith(chnNumChar[0])) chnStr = chnStr.slice(0, -1);
+            return chnStr;
+        }
+
+        function calculateRow(element) {
+            const row = element.closest('tr');
+            if (!row) return;
+            const widthInput = row.querySelector('.width');
+            const heightInput = row.querySelector('.height');
+            const quantityInput = row.querySelector('.quantity');
+            const areaSpan = row.querySelector('.area');
+            const priceInput = row.querySelector('.price');
+            const width = parseFloat(widthInput.value) || 0;
+            const height = parseFloat(heightInput.value) || 0;
+            let quantity = parseInt(quantityInput.value) || 1;
+            if (quantity < 1) { quantity = 1; quantityInput.value = 1; }
+            const area = (width * height / 10000 * quantity).toFixed(2);
+            areaSpan.textContent = area;
+            if (!priceInput.dataset.custom) {
+                const price = Math.round(area * UNIT_PRICE_PER_SQ_METER);
+                priceInput.value = price;
+            }
+            calculateTotal();
+        }
+
+        function markCustomPrice(input) {
+            let price = parseFloat(input.value);
+            if (isNaN(price) || price < 0) {
+                price = 0; // 无效输入时重置为0
+                input.value = 0;
+            }
+            input.dataset.custom = 'true';
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let totalPrice = 0, totalArea = 0;
+            document.querySelectorAll('#quoteBody tr').forEach(row => {
+                const price = parseFloat(row.querySelector('.price').value) || 0;
+                const area = parseFloat(row.querySelector('.area').textContent) || 0;
+                totalPrice += price;
+                totalArea += area;
+            });
+            document.getElementById('totalPrice').textContent = totalPrice.toFixed(0);
+            document.getElementById('totalArea').textContent = totalArea.toFixed(2);
+            document.getElementById('totalPriceCN').textContent = toChineseNum(totalPrice);
+        }
+
+        function addRow() {
+            const tbody = document.getElementById('quoteBody');
+            const rowCount = tbody.children.length + 1;
+            const newRow = document.createElement('tr');
+            newRow.classList.add('sm:hover:bg-primary-light', 'transition-colors', 'duration-150');
+            newRow.innerHTML = `
+                <td data-label="序号" class="px-4 py-3 text-center font-medium">${rowCount}</td>
+                <td data-label="画作形式" class="px-4 py-3">
+                    <input type="text" value="定制油画" class="art-type w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm">
+                </td>
+                <td data-label="参数" class="px-4 py-3">
+                    <div class="param-group space-y-1">
+                        <div class="param-label flex items-center gap-1">
+                            <span class="w-auto text-right text-gray-600 text-xs whitespace-nowrap">画芯:</span>
+                            <input type="text" class="param-input core w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm" value="定制画芯">
+                        </div>
+                        <div class="param-label flex items-center gap-1">
+                            <span class="w-auto text-right text-gray-600 text-xs whitespace-nowrap">画布:</span>
+                            <input type="text" class="param-input canvas w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm" value="棉麻油画布">
+                        </div>
+                        <div class="param-label flex items-center gap-1">
+                            <span class="w-auto text-right text-gray-600 text-xs whitespace-nowrap">外框:</span>
+                            <input type="text" class="param-input outer-frame w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm" value="无">
+                        </div>
+                        <div class="param-label flex items-center gap-1">
+                            <span class="w-auto text-right text-gray-600 text-xs whitespace-nowrap">内框:</span>
+                            <input type="text" class="param-input inner-frame w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm" value="欧松木">
+                        </div>
+                    </div>
+                </td>
+                <td data-label="作品尺寸(cm)" class="px-4 py-3">
+                    <div class="size-group space-y-1">
+                         <div class="flex items-center gap-1">
+                            <span class="text-xs text-gray-600 whitespace-nowrap">宽:</span>
+                            <input type="number" class="width w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm text-center" value="0" min="0" step="0.1" oninput="calculateRow(this)">
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="text-xs text-gray-600 whitespace-nowrap">高:</span>
+                            <input type="number" class="height w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm text-center" value="0" min="0" step="0.1" oninput="calculateRow(this)">
+                        </div>
+                    </div>
+                </td>
+                <td data-label="数量" class="px-4 py-3 text-center">
+                    <input type="number" class="quantity w-full sm:w-16 px-2 py-1 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm text-center" value="1" min="1" oninput="calculateRow(this)">
+                </td>
+                <td data-label="平方小计(m²)" class="px-4 py-3 text-center">
+                    <span class="area font-medium">0.00</span>
+                </td>
+                <td data-label="价格(￥)" class="px-4 py-3 text-center">
+                     <div class="relative inline-block w-full sm:w-auto">
+                         <span class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs hidden sm:inline">￥</span>
+                         <input type="number" class="price w-full sm:w-24 sm:pl-5 pr-2 py-1 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm text-right font-semibold bg-gray-50" value="0" min="0" step="1" oninput="markCustomPrice(this)">
+                     </div>
+                </td>
+                <td data-label="画芯构图" class="px-4 py-3 text-center align-middle">
+                    <input type="file" class="image-upload block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary-light file:text-primary hover:file:bg-blue-100 mb-1" accept="image/*" onchange="previewImage(this)">
+                    <img class="image-preview h-16 w-16 object-contain mx-auto rounded border border-gray-200 bg-gray-50 mt-1" src="${PLACEHOLDER_IMAGE_URL}" alt="Image Preview" style="display: none;" onerror="this.onerror=null; this.src='https://placehold.co/100x100/f8f8f8/cccccc?text=Error';">
+                </td>
+                <td data-label="操作" class="px-4 py-3 text-center">
+                    <button class="btn-delete text-red-600 hover:text-red-800 transition duration-150" onclick="removeRow(this)" title="删除此行">
+                         <span class="lucide text-lg"></span>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+            calculateRow(newRow.querySelector('.width'));
+        }
+
+        function removeRow(button) {
+            const row = button.closest('tr');
+            const tbody = document.getElementById('quoteBody');
+            if (tbody.children.length > 1) {
+                row.remove();
+                updateRowNumbers();
+                calculateTotal();
+            } else {
+                alert("无法删除最后一行报价，请至少保留一行！");
+            }
+        }
+
+        function updateRowNumbers() {
+            document.querySelectorAll('#quoteBody tr').forEach((row, index) => {
+                const seqCell = row.querySelector('td[data-label="序号"]');
+                if(seqCell) seqCell.textContent = index + 1;
+            });
+        }
+
+        function previewImage(input) {
+            const file = input.files[0];
+            const imgPreview = input.nextElementSibling;
+            if (file && imgPreview) {
+                const reader = new FileReader();
+                reader.onload = e => { imgPreview.src = e.target.result; imgPreview.style.display = 'block'; };
+                reader.onerror = () => { console.error("读取文件时出错。"); imgPreview.src = 'https://placehold.co/100x100/f8f8f8/cccccc?text=Load+Error'; imgPreview.style.display = 'block'; };
+                reader.readAsDataURL(file);
+            } else if (imgPreview) {
+                imgPreview.style.display = 'none'; imgPreview.src = PLACEHOLDER_IMAGE_URL;
+            }
+        }
+
+        function setCurrentDate() {
+            const today = new Date();
+            document.getElementById('currentDate').textContent = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        }
+
+        function updateTitle() {
+            const studioName = document.getElementById('studioName').value;
+            document.getElementById('quoteTitle').textContent = `${studioName}报价单`;
+            document.title = `报价单 - ${studioName}`;
+        }
+
+        function exportToExcel() {
+            const studioName = document.getElementById('studioName').value;
+            const customerName = document.getElementById('customerName').value || 'N/A';
+            const customerAddress = document.getElementById('customerAddress').value || 'N/A';
+            const quoter = document.getElementById('quoter').value || 'N/A';
+            const currentDate = document.getElementById('currentDate').textContent;
+            const approver = document.getElementById('approver').value || 'N/A';
+            const totalPrice = document.getElementById('totalPrice').textContent;
+            const totalArea = document.getElementById('totalArea').textContent;
+            const totalPriceCN = document.getElementById('totalPriceCN').textContent;
+
+            const wb = XLSX.utils.book_new();
+            const wsData = [
+                [`${studioName}报价单`], [],
+                ["报价单位:", studioName, "", "联系电话:", "18059018257"],
+                ["客户名称:", customerName, "", "联系地址:", customerAddress], [],
+                ["序号", "画作形式", "参数", "作品尺寸(cm)", "数量", "平方小计(m²)", "价格(￥)", "是否自定义价格"]
+            ];
+            document.querySelectorAll('#quoteBody tr').forEach(row => {
+                const params = [`画芯: ${row.querySelector('.core').value}`, `画布: ${row.querySelector('.canvas').value}`, `外框: ${row.querySelector('.outer-frame').value}`, `内框: ${row.querySelector('.inner-frame').value}`].join('; ');
+                const dimensions = `宽:${row.querySelector('.width').value} 高:${row.querySelector('.height').value}`;
+                let seqNum = 1;
+                const seqCell = row.querySelector('td[data-label="序号"]');
+                if (seqCell) seqNum = parseInt(seqCell.textContent) || 1;
+                const isCustomPrice = row.querySelector('.price').dataset.custom === 'true' ? '是' : '否';
+                wsData.push([
+                    seqNum,
+                    row.querySelector('.art-type').value, params, dimensions,
+                    parseInt(row.querySelector('.quantity').value),
+                    parseFloat(row.querySelector('.area').textContent),
+                    parseFloat(row.querySelector('.price').value),
+                    isCustomPrice
+                ]);
+            });
+            const totalRowIndex = wsData.length;
+            wsData.push([]);
+            wsData.push(["合计平方数:", totalArea + " m²", "", "合计小写:", "￥" + totalPrice, "", "合计大写:", totalPriceCN]);
+            const footerStartIndex = wsData.length;
+            wsData.push([]);
+            wsData.push(["报价人:", quoter, "", "报价日期:", currentDate, "", "审批:", approver]);
+            wsData.push(["公司地址:", "福建省厦门市", "", "联系电话:", "18059018257"]);
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const headerRowIdx = 5;
+            const dataStartRowIdx = headerRowIdx + 1;
+            const dataEndRowIdx = totalRowIndex - 1;
+            const totalRowIdxData = totalRowIndex + 1;
+            const footerStartIdxData = footerStartIndex + 1;
+
+            const styles = {
+                title: { font: { sz: 16, bold: true }, alignment: { horizontal: 'center', vertical: 'center' } },
+                header: { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: tailwind.config.theme.extend.colors.excelHeader } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { top: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, bottom: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, left: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, right: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } } } },
+                cell: { border: { top: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, bottom: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, left: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, right: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } } }, alignment: { vertical: 'center', wrapText: true } },
+                cellCenter: { border: { top: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, bottom: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, left: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, right: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } },
+                cellRight: { border: { top: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, bottom: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, left: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } }, right: { style: "thin", color: { rgb: tailwind.config.theme.extend.colors.excelBorder } } }, alignment: { horizontal: 'right', vertical: 'center', wrapText: true } },
+                infoLabel: { font: { bold: true }, alignment: { horizontal: 'right', vertical: 'center' }, fill: { fgColor: { rgb: tailwind.config.theme.extend.colors.excelInfo } } },
+                infoValue: { alignment: { horizontal: 'left', vertical: 'center' }, fill: { fgColor: { rgb: tailwind.config.theme.extend.colors.excelInfo } } },
+                totalLabel: { font: { bold: true }, alignment: { horizontal: 'right', vertical: 'center' }, fill: { fgColor: { rgb: tailwind.config.theme.extend.colors.excelTotal } }, border: { top: { style: "medium", color: { rgb: "000000" } } } },
+                totalValue: { font: { bold: true }, alignment: { horizontal: 'left', vertical: 'center' }, fill: { fgColor: { rgb: tailwind.config.theme.extend.colors.excelTotal } }, border: { top: { style: "medium", color: { rgb: "000000" } } } },
+                totalValueRight: { font: { bold: true }, alignment: { horizontal: 'right', vertical: 'center' }, fill: { fgColor: { rgb: tailwind.config.theme.extend.colors.excelTotal } }, border: { top: { style: "medium", color: { rgb: "000000" } } } }
+            };
+
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellRef]) continue;
+                    let currentStyle = JSON.parse(JSON.stringify(styles.cell));
+                    if (R === 0) currentStyle = styles.title;
+                    else if (R >= 2 && R <= 3) {
+                        currentStyle = (C % 3 === 0) ? styles.infoLabel : styles.infoValue;
+                        if (C === 2) currentStyle.border = {};
+                    }
+                    else if (R === headerRowIdx) currentStyle = styles.header;
+                    else if (R >= dataStartRowIdx && R <= dataEndRowIdx) {
+                        if (C === 0 || C === 4 || C === 7) { currentStyle = styles.cellCenter; ws[cellRef].t = 'n'; }
+                        else if (C === 5) { currentStyle = styles.cellRight; ws[cellRef].t = 'n'; ws[cellRef].z = '0.00'; }
+                        else if (C === 6) { currentStyle = styles.cellRight; ws[cellRef].t = 'n'; ws[cellRef].z = '"￥"#,##0'; }
+                        else { currentStyle = styles.cell; currentStyle.alignment.wrapText = true; }
+                    }
+                    else if (R === totalRowIdxData) {
+                        if (C === 0 || C === 3 || C === 6) currentStyle = styles.totalLabel;
+                        else if (C === 1 || C === 7) currentStyle = styles.totalValue;
+                        else if (C === 4) { currentStyle = styles.totalValueRight; ws[cellRef].z = '"￥"#,##0'; }
+                        else { currentStyle = styles.totalValue; currentStyle.border = { top: styles.totalValue.border.top }; }
+                    }
+                    else if (R >= footerStartIdxData) {
+                        currentStyle = (C % 3 === 0) ? styles.infoLabel : styles.infoValue;
+                        if (C === 2 || C === 5) currentStyle.border = {};
+                    }
+                    if (wsData[R].every(cell => cell === "" || cell === undefined || cell === null)) currentStyle.border = {};
+                    ws[cellRef].s = currentStyle;
+                }
+            }
+
+            ws['!cols'] = [ { wch: 5 }, { wch: 15 }, { wch: 45 }, { wch: 20 }, { wch: 8 }, { wch: 15 }, { wch: 15 }, { wch: 15 } ];
+            ws['!merges'] = [ 
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
+                { s: { r: totalRowIdxData, c: 1 }, e: { r: totalRowIdxData, c: 2 } },
+                { s: { r: totalRowIdxData, c: 4 }, e: { r: totalRowIdxData, c: 5 } },
+                { s: { r: totalRowIdxData, c: 7 }, e: { r: totalRowIdxData, c: 8 } }
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, "报价单");
+            const fileName = `报价单_${studioName}_${currentDate}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
+        window.onload = function() {
+            setCurrentDate();
+            updateTitle();
+            addRow();
+        };
+    </script>
+</body>
+</html>
