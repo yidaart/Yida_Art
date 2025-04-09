@@ -6,6 +6,7 @@
     <title>艺达·ART报价单</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
       @font-face {
         font-family: 'LucideIcons';
@@ -25,7 +26,7 @@
         color: transparent;
       }
       input[type="file"]::file-selector-button {
-        @apply px-3 py-1.5 text-sm font-semibold bg-[#4CAF50] text-white border border-transparent rounded-md cursor-pointer hover:bg-[#388e3c] transition-colors duration-200 ease-in-out;
+        @apply px-3 py-1.5 text-sm font-semibold bg-[#2E7D32] text-white border border-transparent rounded-md cursor-pointer hover:bg-[#4CAF50] transition-colors duration-200;
       }
       input[type=number]::-webkit-inner-spin-button,
       input[type=number]::-webkit-outer-spin-button {
@@ -39,13 +40,21 @@
         outline: 2px solid #4CAF50;
         outline-offset: 2px;
       }
-
-      /* Header */
+      body {
+        font-family: 'PingFang SC', 'Noto Sans SC', 'Helvetica Neue', 'Arial', sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .container {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-radius: 1.5rem;
+        background: white;
+      }
       .header {
-        background: linear-gradient(135deg, #4CAF50 0%, #2e7d32 100%);
+        background: linear-gradient(to right, #2E7D32, #4CAF50);
         padding: 2rem;
-        border-radius: 1rem 1rem 0 0;
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 1.5rem 1.5rem 0 0;
         text-align: center;
       }
       .header h1 {
@@ -64,17 +73,15 @@
         color: white;
         text-decoration: none;
         padding: 0.75rem 1.5rem;
-        background: rgba(255, 255, 作品尺寸(cm)255, 0.1);
+        background: rgba(255, 255, 255, 0.15);
         border-radius: 9999px;
         font-weight: 500;
         transition: all 0.3s ease;
       }
       .header nav a:hover {
-        background: rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.3);
         transform: translateY(-2px);
       }
-
-      /* Info Section */
       .info {
         background: #fff;
         padding: 1.5rem;
@@ -89,11 +96,10 @@
         margin-bottom: 0.25rem;
       }
       .info input, .info select, .footer input {
-        @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent transition-all duration-200;
+        @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent transition-all duration-200 bg-gray-50;
       }
-
-      /* Table */
       #quoteTable {
+        border: 1px solid #e5e7eb;
         border-collapse: collapse;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         background: white;
@@ -103,25 +109,27 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        background: linear-gradient(135deg, #4CAF50, #388e3c);
+        background: linear-gradient(to right, #2E7D32, #4CAF50);
         color: white;
         font-weight: 600;
         text-transform: uppercase;
         padding: 1rem;
         font-size: 0.9rem;
       }
-      #quoteTable th:nth-child(1) { width: 5%; } /* 序号 */
-      #quoteTable th:nth-child(2) { width: 10%; } /* 画作形式 */
-      #quoteTable th:nth-child(3) { width: 25%; } /* 参数 */
-      #quoteTable th:nth-child(4) { width: 15%; } /* 作品尺寸 */
-      #quoteTable th:nth-child(5) { width: 8%; } /* 数量 */
-      #quoteTable th:nth-child(6) { width: 12%; } /* 平方小计 */
-      #quoteTable th:nth-child(7) { width: 8%; } /* 价格 */
-      #quoteTable th:nth-child(8) { width: 12%; } /* 画芯构图 */
-      #quoteTable th:nth-child(9) { width: 5%; } /* 操作 */
+      #quoteTable th:nth-child(1) { width: 5%; }
+      #quoteTable th:nth-child(2) { width: 10%; }
+      #quoteTable th:nth-child(3) { width: 30%; } /* 增加参数列宽度 */
+      #quoteTable th:nth-child(4) { width: 15%; }
+      #quoteTable th:nth-child(5) { width: 8%; }
+      #quoteTable th:nth-child(6) { width: 10%; }
+      #quoteTable th:nth-child(7) { width: 10%; }
+      #quoteTable th:nth-child(8) { width: 10%; }
+      #quoteTable th:nth-child(9) { width: 5%; }
       #quoteTable td {
         padding: 1rem;
         color: #374151;
+        vertical-align: middle;
+        border-bottom: 1px solid #e5e7eb;
       }
       #quoteTable tr:nth-child(even) {
         background: #f9fafb;
@@ -130,12 +138,15 @@
         transition: background 0.2s ease;
       }
       #quoteTable tr:hover {
-        background: #e8f5e9;
+        background: #f0fdf4;
       }
       .image-preview {
         border-radius: 0.5rem;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         transition: transform 0.2s ease;
+        width: 60px; /* 统一图片大小 */
+        height: 60px;
+        object-fit: cover;
       }
       .image-preview:hover {
         transform: scale(1.05);
@@ -155,7 +166,7 @@
       .image-upload::before {
         content: '选择文件';
         display: inline-block;
-        background: linear-gradient(135deg, #4CAF50, #388e3c);
+        background: #2E7D32;
         color: white;
         font-size: 0.9rem;
         font-weight: 500;
@@ -165,7 +176,7 @@
         transition: all 0.3s ease;
       }
       .image-upload:hover::before {
-        background: linear-gradient(135deg, #388e3c, #2e7d32);
+        background: #4CAF50;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
@@ -178,28 +189,23 @@
         opacity: 0;
         cursor: pointer;
       }
-      .image-upload input[type="file"]::file-selector-button {
-        display: none;
-      }
-
-      /* Buttons */
       .button-group {
         display: flex;
         justify-content: flex-end;
         gap: 1rem;
       }
       .button-group button {
-        background: linear-gradient(135deg, #4CAF50, #388e3c);
-        padding: 0.75rem 1.5rem;
+        background: linear-gradient(to right, #2E7D32, #4CAF50);
+        padding: 0.75rem 2rem;
         border-radius: 9999px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         color: white;
         font-weight: 600;
-        transition: all 0.3s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
       .button-group button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
       }
       .btn-delete {
         font-size: 1.25rem;
@@ -212,27 +218,26 @@
         background: #fee2e2;
         color: #dc2626;
       }
-
-      /* Total Section */
       .total-container {
         display: flex;
         justify-content: flex-end;
-        margin-top: 2rem;
+        margin-top: 3rem; /* 增加间距 */
+        padding: 0 1.5rem;
       }
       .total {
-        background: linear-gradient(to right, #f0fdf4, #e8f5e9);
+        background: #f0fdf4;
         border-radius: 0.75rem;
         padding: 1.5rem;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         width: 100%;
-        max-width: 400px;
+        max-width: 450px; /* 增加宽度 */
       }
       .total div {
         display: flex;
         align-items: center;
         gap: 1rem;
         font-size: 1.1rem;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
       }
       .total-label {
         color: #2e7d32;
@@ -244,30 +249,67 @@
         font-weight: 800;
         color: #1f2937;
       }
-
-      /* Footer */
       .footer {
         background: #f9fafb;
         border-top: 2px solid #e5e7eb;
         padding: 2rem;
-        border-radius: 0 0 1rem 1rem;
-        margin-top: 2.5rem;
+        border-radius: 0 0 1.5rem 1.5rem;
+        margin-top: 3rem; /* 增加间距 */
       }
       .footer label, .footer span {
         font-weight: 600;
         color: #374151;
         font-size: 0.9rem;
       }
-
-      /* Mobile Styles */
+      /* 导出样式 */
+      .hide-for-export {
+        width: 100%;
+        max-width: 1200px;
+        overflow: visible !important;
+        padding: 1rem;
+      }
+      .hide-for-export input[type="text"],
+      .hide-for-export input[type="number"],
+      .hide-for-export select,
+      .hide-for-export .image-upload {
+        display: none;
+      }
+      .hide-for-export .param-group {
+        display: block !important; /* 强制显示参数 */
+        position: static;
+        box-shadow: none;
+        padding: 0;
+      }
+      .hide-for-export td[data-label="参数"]::after {
+        display: none; /* 移除“点击查看参数” */
+      }
+      .hide-for-export td,
+      .hide-for-export th {
+        padding: 1rem;
+        vertical-align: middle;
+        font-size: 0.9rem;
+      }
+      .hide-for-export .image-preview {
+        max-width: 60px;
+        height: 60px;
+        object-fit: cover;
+      }
+      .hide-for-export .size-group span,
+      .hide-for-export .param-group span {
+        display: block;
+        margin: 0.25rem 0;
+        word-break: break-word;
+        font-size: 0.9rem;
+        color: #374151;
+      }
+      .hide-for-export .info span,
+      .hide-for-export .footer span {
+        font-size: 0.9rem;
+        color: #374151;
+      }
       @media (max-width: 640px) {
-        #quoteTable thead {
-          display: none;
-        }
-        #quoteTable tbody, #quoteTable tr {
-          display: block;
-          width: 100%;
-        }
+        #quoteTable thead { display: none; }
+        #quoteTable tbody, #quoteTable tr { display: block; width: 100%; }
         #quoteTable tr {
           border-radius: 0.75rem;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -279,31 +321,26 @@
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0.5rem 0.75rem;
-          font-size: 0.85rem;
+          padding: 0.75rem;
+          font-size: 0.9rem;
           border-bottom: 1px solid #e5e7eb;
         }
-        #quoteTable td:last-child {
-          border-bottom: none;
-        }
+        #quoteTable td:last-child { border-bottom: none; }
         #quoteTable td::before {
           content: attr(data-label);
           font-weight: 600;
-          color: #4CAF50;
-          font-size: 0.85rem;
+          color: #2E7D32;
+          font-size: 0.9rem;
           flex: 0 0 35%;
           text-align: left;
         }
         #quoteTable td[data-label="序号"] {
           font-size: 1.25rem;
           font-weight: 700;
-          color: #4CAF50;
+          color: #2E7D32;
           justify-content: flex-start;
-          padding: 0.5rem 0.75rem;
         }
-        #quoteTable td[data-label="序号"]::before {
-          display: none;
-        }
+        #quoteTable td[data-label="序号"]::before { display: none; }
         #quoteTable td[data-label="画作形式"] input,
         #quoteTable td[data-label="数量"] input,
         #quoteTable td[data-label="价格(￥)"] input {
@@ -322,9 +359,6 @@
           min-width: 100px;
           max-width: 120px;
         }
-        #quoteTable td[data-label="作品尺寸(cm)"] .size-group input {
-          width: 100%;
-        }
         #quoteTable td[data-label="参数"] .param-group {
           display: none;
           position: absolute;
@@ -337,72 +371,27 @@
           left: 5%;
           top: 100%;
         }
-        #quoteTable td[data-label="参数"]:hover .param-group {
-          display: block;
-        }
+        #quoteTable td[data-label="参数"]:hover .param-group { display: block; }
         #quoteTable td[data-label="参数"]::after {
           content: "点击查看参数";
-          display: block;
-          color: #4CAF50;
+          color: #2E7D32;
           cursor: pointer;
           font-size: 0.85rem;
         }
         #quoteTable td[data-label="画芯构图"] .image-upload-container {
-          display: flex;
           flex-direction: row;
-          align-items: center;
           justify-content: flex-end;
           gap: 0.5rem;
-          width: 100%;
         }
-        #quoteTable td[data-label="画芯构图"] .image-upload {
-          max-width: 100px;
-        }
-        #quoteTable td[data-label="画芯构图"] .image-upload::before {
-          font-size: 0.8rem;
-          padding: 0.4rem 0.8rem;
-        }
-        #quoteTable td[data-label="画芯构图"] .image-preview {
-          width: 40px;
-          height: 40px;
-        }
-        #quoteTable td[data-label="操作"] {
-          justify-content: flex-end;
-        }
-        .button-group {
-          flex-direction: column;
-          gap: 1rem;
-        }
-        .info, .footer {
-          padding: 1rem;
-        }
-        .total-container {
-          justify-content: center;
-        }
-        .total {
-          width: 100%;
-        }
-        .total div {
-          font-size: 1rem;
-        }
+        #quoteTable td[data-label="画芯构图"] .image-preview { width: 40px; height: 40px; }
+        .button-group { flex-direction: column; gap: 1rem; }
+        .info, .footer { padding: 1rem; }
+        .total-container { justify-content: center; }
+        .total { width: 100%; padding: 1rem; max-width: none; }
+        .total div { font-size: 1rem; }
       }
     </style>
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'PingFang SC', 'Helvetica Neue', 'Arial', 'sans-serif'],
-            },
-            colors: {
-              primary: '#4CAF50',
-              'primary-hover': '#388e3c',
-              'primary-light': '#e8f5e9',
-            }
-          }
-        }
-      }
-
       const UNIT_PRICE_PER_SQ_METER = 1600;
       const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/100x100/f0f5ff/003366?text=Preview';
 
@@ -608,11 +597,11 @@
 
       function exportToExcel() {
         const studioName = document.getElementById('studioName').value;
-        const customerName = document.getElementById('customerName').value || 'N/A';
-        const customerAddress = document.getElementById('customerAddress').value || 'N/A';
-        const quoter = document.getElementById('quoter').value || 'N/A';
+        const customerName = document.getElementById('customerName').value || '未填写';
+        const customerAddress = document.getElementById('customerAddress').value || '未填写';
+        const quoter = document.getElementById('quoter').value || '未填写';
         const currentDate = document.getElementById('currentDate').textContent;
-        const approver = document.getElementById('approver').value || 'N/A';
+        const approver = document.getElementById('approver').value || '未填写';
         const contactPhone = document.getElementById('contactPhone').value || '18059018257';
         const footerContactPhone = document.getElementById('footerContactPhone').value || '18059018257';
         const totalPrice = document.getElementById('totalPrice').textContent;
@@ -623,51 +612,43 @@
         const wsData = [
           [`${studioName}报价单`], [],
           ["报价单位:", studioName, "", "联系电话:", contactPhone],
-          ["客户名称:", customerName, "", "联系地址:", customerAddress], [],
+          ["客户名称:", customerName, "", "联系地址:", customerAddress],
+          [],
           ["序号", "画作形式", "参数", "作品尺寸(cm)", "数量", "平方小计(m²)", "价格(￥)", "是否自定义价格"]
         ];
+
         document.querySelectorAll('#quoteBody tr').forEach(row => {
-          const params = [`画芯: ${row.querySelector('.core').value}`, `画布: ${row.querySelector('.canvas').value}`, `外框: ${row.querySelector('.outer-frame').value}`, `内框: ${row.querySelector('.inner-frame').value}`].join('; ');
-          const dimensions = `宽:${row.querySelector('.width').value} 高:${row.querySelector('.height').value}`;
-          let seqNum = 1;
-          const seqCell = row.querySelector('td[data-label="序号"]');
-          if (seqCell) seqNum = parseInt(seqCell.textContent) || 1;
+          const params = [
+            `画芯: ${row.querySelector('.core').value}`,
+            `画布: ${row.querySelector('.canvas').value}`,
+            `外框: ${row.querySelector('.outer-frame').value}`,
+            `内框: ${row.querySelector('.inner-frame').value}`
+          ].join('; ');
+          const dimensions = `${row.querySelector('.width').value}×${row.querySelector('.height').value}`;
+          const seqNum = parseInt(row.querySelector('td[data-label="序号"]').textContent) || 1;
           const isCustomPrice = row.querySelector('.price').dataset.custom === 'true' ? '是' : '否';
           wsData.push([
             seqNum,
-            row.querySelector('.art-type').value, params, dimensions,
+            row.querySelector('.art-type').value,
+            params,
+            dimensions,
             parseInt(row.querySelector('.quantity').value),
             parseFloat(row.querySelector('.area').textContent),
             parseFloat(row.querySelector('.price').value),
             isCustomPrice
           ]);
         });
-        const totalRowIndex = wsData.length;
-        wsData.push([]);
-        wsData.push(["合计平方数:", totalArea + " m²", "", "合计小写:", "￥" + totalPrice, "", "合计大写:", totalPriceCN]);
-        const footerStartIndex = wsData.length;
-        wsData.push([]);
-        wsData.push(["报价人:", quoter, "", "报价日期:", currentDate, "", "审批:", approver]);
+
+        wsData.push([], ["合计平方数:", totalArea + " m²", "", "", "合计金额:", `￥${totalPrice}`, "", totalPriceCN]);
+        wsData.push([], ["报价人:", quoter, "", "报价日期:", currentDate, "", "审批:", approver]);
         wsData.push(["公司地址:", "福建省福州市仓山区建新镇后巷路2号", "", "联系电话:", footerContactPhone]);
 
         const ws = XLSX.utils.aoa_to_sheet(wsData);
-        const headerRowIdx = 5;
-        const dataStartRowIdx = headerRowIdx + 1;
-        const dataEndRowIdx = totalRowIndex - 1;
-        const totalRowIdxData = totalRowIndex + 1;
-        const footerStartIdxData = footerStartIndex + 1;
-
         const styles = {
-          title: { font: { sz: 16, bold: true }, alignment: { horizontal: 'center', vertical: 'center' } },
-          header: { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4CAF50" } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } },
-          cell: { border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }, alignment: { vertical: 'center', wrapText: true } },
-          cellCenter: { border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } },
-          cellRight: { border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }, alignment: { horizontal: 'right', vertical: 'center', wrapText: true } },
-          infoLabel: { font: { bold: true }, alignment: { horizontal: 'right', vertical: 'center' }, fill: { fgColor: { rgb: "F3F4F6" } } },
-          infoValue: { alignment: { horizontal: 'left', vertical: 'center' }, fill: { fgColor: { rgb: "F3F4F6" } } },
-          totalLabel: { font: { bold: true }, alignment: { horizontal: 'right', vertical: 'center' }, fill: { fgColor: { rgb: "E0E7FF" } }, border: { top: { style: "medium", color: { rgb: "000000" } } } },
-          totalValue: { font: { bold: true }, alignment: { horizontal: 'left', vertical: 'center' }, fill: { fgColor: { rgb: "E0E7FF" } }, border: { top: { style: "medium", color: { rgb: "000000" } } } },
-          totalValueRight: { font: { bold: true }, alignment: { horizontal: 'right', vertical: 'center' }, fill: { fgColor: { rgb: "E0E7FF" } }, border: { top: { style: "medium", color: { rgb: "000000" } } } }
+          title: { font: { sz: 16, bold: true }, alignment: { horizontal: 'center' } },
+          header: { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "2E7D32" } }, alignment: { horizontal: 'center' } },
+          cell: { alignment: { wrapText: true, vertical: 'center' }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } },
+          total: { font: { bold: true }, fill: { fgColor: { rgb: "E8F5E9" } } }
         };
 
         const range = XLSX.utils.decode_range(ws['!ref']);
@@ -675,45 +656,81 @@
           for (let C = range.s.c; C <= range.e.c; ++C) {
             const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
             if (!ws[cellRef]) continue;
-            let currentStyle = JSON.parse(JSON.stringify(styles.cell));
-            if (R === 0) currentStyle = styles.title;
-            else if (R >= 2 && R <= 3) {
-              currentStyle = (C % 3 === 0) ? styles.infoLabel : styles.infoValue;
-              if (C === 2) currentStyle.border = {};
-            }
-            else if (R === headerRowIdx) currentStyle = styles.header;
-            else if (R >= dataStartRowIdx && R <= dataEndRowIdx) {
-              if (C === 0 || C === 4 || C === 7) { currentStyle = styles.cellCenter; ws[cellRef].t = 'n'; }
-              else if (C === 5) { currentStyle = styles.cellRight; ws[cellRef].t = 'n'; ws[cellRef].z = '0.00'; }
-              else if (C === 6) { currentStyle = styles.cellRight; ws[cellRef].t = 'n'; ws[cellRef].z = '"￥"#,##0'; }
-              else { currentStyle = styles.cell; currentStyle.alignment.wrapText = true; }
-            }
-            else if (R === totalRowIdxData) {
-              if (C === 0 || C === 3 || C === 6) currentStyle = styles.totalLabel;
-              else if (C === 1 || C === 7) currentStyle = styles.totalValue;
-              else if (C === 4) { currentStyle = styles.totalValueRight; ws[cellRef].z = '"￥"#,##0'; }
-              else { currentStyle = styles.totalValue; currentStyle.border = { top: styles.totalValue.border.top }; }
-            }
-            else if (R >= footerStartIdxData) {
-              currentStyle = (C % 3 === 0) ? styles.infoLabel : styles.infoValue;
-              if (C === 2 || C === 5) currentStyle.border = {};
-            }
-            if (wsData[R].every(cell => cell === "" || cell === undefined || cell === null)) currentStyle.border = {};
-            ws[cellRef].s = currentStyle;
+            ws[cellRef].s = (R === 0) ? styles.title : (R === 5) ? styles.header : (R === wsData.length - 3) ? styles.total : styles.cell;
+            if (R > 5 && R < wsData.length - 3 && C === 5) ws[cellRef].z = '0.00';
+            if (R > 5 && R < wsData.length - 3 && C === 6) ws[cellRef].z = '"￥"#,##0';
           }
         }
 
-        ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 45 }, { wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 10 }, { wch: 18 }];
-        ws['!merges'] = [
-          { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } },
-          { s: { r: totalRowIdxData, c: 1 }, e: { r: totalRowIdxData, c: 2 } },
-          { s: { r: totalRowIdxData, c: 4 }, e: { r: totalRowIdxData, c: 5 } },
-          { s: { r: totalRowIdxData, c: 7 }, e: { r: totalRowIdxData, c: 8 } }
-        ];
+        ws['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 40 }, { wch: 12 }, { wch: 6 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
 
         XLSX.utils.book_append_sheet(wb, ws, "报价单");
-        const fileName = `报价单_${studioName}_${currentDate}.xlsx`;
-        XLSX.writeFile(wb, fileName);
+        XLSX.writeFile(wb, `报价单_${studioName}_${currentDate}.xlsx`);
+      }
+
+      function exportToPNG() {
+        const container = document.querySelector('.container');
+        const studioName = document.getElementById('studioName').value;
+        const currentDate = document.getElementById('currentDate').textContent;
+
+        document.body.style.overflow = 'hidden';
+        container.classList.add('hide-for-export');
+
+        const inputs = document.querySelectorAll('input[type="text"], input[type="number"], select');
+        const replacements = [];
+        inputs.forEach(input => {
+          const value = input.value || '未填写';
+          const span = document.createElement('span');
+          span.textContent = value;
+          span.className = input.className + ' inline-block w-full text-sm';
+          span.style.wordBreak = 'break-word';
+          input.parentNode.replaceChild(span, input);
+          replacements.push({ input, span });
+        });
+
+        const images = container.querySelectorAll('.image-preview');
+        const imagePromises = Array.from(images).map(img => {
+          if (img.src && img.style.display !== 'none') {
+            return new Promise(resolve => {
+              if (img.complete) resolve();
+              else img.onload = img.onerror = resolve;
+            });
+          }
+          return Promise.resolve();
+        });
+
+        Promise.all(imagePromises).then(() => {
+          const originalWidth = container.offsetWidth;
+          const fullHeight = container.scrollHeight + 100; /* 增加底部缓冲 */
+
+          html2canvas(container, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            width: originalWidth,
+            height: fullHeight,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: document.documentElement.offsetWidth,
+            windowHeight: fullHeight
+          }).then(canvas => {
+            document.body.style.overflow = 'auto';
+            container.classList.remove('hide-for-export');
+            replacements.forEach(({ input, span }) => span.parentNode.replaceChild(input, span));
+
+            const link = document.createElement('a');
+            link.download = `报价单_${studioName}_${currentDate}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+          }).catch(error => {
+            console.error('导出PNG失败:', error);
+            alert('导出PNG失败，请检查内容或稍后重试！');
+            document.body.style.overflow = 'auto';
+            container.classList.remove('hide-for-export');
+            replacements.forEach(({ input, span }) => span.parentNode.replaceChild(input, span));
+          });
+        });
       }
 
       document.addEventListener('DOMContentLoaded', function() {
@@ -733,7 +750,7 @@
       });
     </script>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800 p-4 md:p-8">
+<body class="p-4 md:p-8">
   <div class="container max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
     <div class="header">
       <h1 id="quoteTitle">艺达·ART报价单</h1>
@@ -774,6 +791,9 @@
       <button onclick="exportToExcel()">
         <span class="lucide"></span> 导出Excel
       </button>
+      <button onclick="exportToPNG()">
+        <span class="lucide"></span> 导出PNG
+      </button>
     </div>
 
     <div class="overflow-x-auto px-6">
@@ -795,7 +815,7 @@
       </table>
     </div>
 
-    <div class="total-container px-6">
+    <div class="total-container">
       <div class="total">
         <div>
           <span class="total-label">合计平方数:</span>
