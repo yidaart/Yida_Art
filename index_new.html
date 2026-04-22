@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>艺达·ART丨智能挂画系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #FAFAFA;
+            --bg-card: #FFFFFF;
+            --text-primary: #1A1A1A;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --accent: #E63946;
+            --border: #E8E8E8;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 24px rgba(0,0,0,0.06);
+            --radius: 4px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Noto Serif SC', 'Inter', -apple-system, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        /* === 顶栏 === */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 48px;
+            background: rgba(250, 250, 250, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+        .logo {
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 3px;
+            color: var(--text-primary);
+        }
+        .logo-sub { color: var(--text-muted); margin-left: 10px; font-weight: 300; }
+        .topbar nav { display: flex; gap: 32px; }
+        .topbar nav a {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            letter-spacing: 1.5px;
+            transition: color 0.2s;
+        }
+        .topbar nav a:hover, .topbar nav a.active { color: var(--text-primary); }
+
+        /* === 主内容 === */
+        .main { padding-top: 72px; }
+
+        /* === 参数面板 === */
+        .params-panel {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 32px;
+            padding: 32px 48px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+        .param-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 140px;
+        }
+        .param-group label {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .param-group select,
+        .param-group input {
+            height: 40px;
+            padding: 0 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            transition: border-color 0.2s;
+            -moz-appearance: textfield;
+        }
+        .param-group select:focus, .param-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .param-group select option { background: var(--bg-card); }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+        .param-divider {
+            width: 1px;
+            height: 40px;
+            background: var(--border);
+            align-self: center;
+        }
+
+        /* === 折叠区域 === */
+        .collapsible-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            padding: 8px 0;
+            transition: color 0.2s;
+        }
+        .collapsible-header:hover { color: var(--text-primary); }
+        .toggle-icon {
+            font-size: 10px;
+            transition: transform 0.3s;
+        }
+        .toggle-icon.collapsed { transform: rotate(-90deg); }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+        .collapsible-content.expanded { max-height: 300px; }
+
+        /* === 预览区 === */
+        .preview-section {
+            display: flex;
+            justify-content: center;
+            padding: 48px;
+            background: var(--bg-page);
+        }
+        .preview-card {
+            width: 100%;
+            max-width: 900px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .preview-title {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
+        .icon-btn svg { width: 14px; height: 14px; }
+        .preview-canvas {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+            min-height: 420px;
+            background: linear-gradient(180deg, #F8F8F8 0%, #FAFAFA 100%);
+        }
+        .preview-svg-wrapper { width: 100%; max-width: 700px; }
+
+        /* === 结果面板 === */
+        .result-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 48px 48px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+        }
+        .result-content {
+            display: flex;
+            gap: 64px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        .result-item { text-align: center; }
+        .result-value {
+            font-family: 'Inter', sans-serif;
+            font-size: 36px;
+            font-weight: 300;
+            letter-spacing: -1px;
+            color: var(--text-primary);
+        }
+        .result-unit { font-size: 14px; color: var(--text-muted); margin-left: 2px; }
+        .result-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+        /* === 计算按钮 === */
+        .calc-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 48px;
+            padding: 0 40px;
+            background: var(--text-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 12px;
+            letter-spacing: 2.5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .calc-btn:hover { background: #333; }
+        .calc-btn:active { background: #111; }
+
+        /* === 错误/加载 === */
+        #loading { display: none; text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px; }
+        .error-message {
+            display: none;
+            padding: 12px 16px;
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            border-radius: var(--radius);
+            color: #DC2626;
+            font-size: 13px;
+            margin-top: 12px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /* === 底部 === */
+        .qr-section {
+            padding: 48px;
+            text-align: center;
+            background: var(--bg-page);
+            border-top: 1px solid var(--border);
+        }
+        .qr-title {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+        .qr-code-section { display: inline-block; }
+
+        /* === SVG 内部 === */
+        #simulationSvg { display: block; width: 100%; height: auto; }
+        .simulation-svg text { font-family: 'Inter', sans-serif; }
+        .sofa-path { fill: #D4D4D4; }
+        .wall-path { fill: #E8E4E0; stroke: #D4D0CC; stroke-width: 1; }
+        .frame-path { fill: none; stroke-width: 3; }
+        .frame-black { stroke: #1A1A1A; }
+        .frame-gold { stroke: #C9A86C; }
+        .frame-red { stroke: #B33A3A; }
+        .frame-natural { stroke: #D4B896; }
+        .frame-walnut { stroke: #5D432C; }
+        .painting-path { fill: url(#paintingPattern); }
+        #paintingGroup { cursor: grab; }
+        #paintingGroup.dragging { cursor: grabbing; }
+        .dimension-text { font-size: 8px; fill: #666; text-anchor: middle; pointer-events: none; }
+        .hang-height-text { font-size: 10px; fill: var(--text-secondary); text-anchor: end; dominant-baseline: middle; }
+        .scale-line { stroke: #CCC; stroke-width: 0.5; }
+        .scale-text { font-size: 8px; fill: #999; text-anchor: middle; dominant-baseline: middle; }
+
+        /* === 响应式 === */
+        @media (max-width: 768px) {
+            .topbar { padding: 0 24px; height: 60px; }
+            .main { padding-top: 60px; }
+            .params-panel { padding: 20px 24px; gap: 20px; }
+            .preview-section { padding: 24px; }
+            .preview-canvas { padding: 24px; min-height: 300px; }
+            .result-panel { padding: 24px; }
+            .result-value { font-size: 28px; }
+            .result-content { gap: 32px; }
+            .qr-section { padding: 32px 24px; }
+        }
+        @media (max-width: 480px) {
+            .topbar { padding: 0 16px; }
+            .params-panel { padding: 16px; gap: 12px; }
+            .param-group { min-width: 120px; }
+            .preview-section { padding: 16px; }
+            .preview-canvas { min-height: 240px; padding: 16px; }
+            .result-panel { padding: 20px 16px; }
+            .result-value { font-size: 24px; }
+            .qr-section { padding: 24px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶栏 -->
+    <header class="topbar">
+        <div class="logo">YIDA·ART<span class="logo-sub">智能挂画系统</span></div>
+        <nav>
+            <a href="./index.html" class="active">智能挂画系统</a>
+            <a href="./quote.html">生成报价单</a>
+        </nav>
+    </header>
+
+    <!-- 主内容 -->
+    <main class="main">
+        <!-- 参数面板 -->
+        <section class="params-panel">
+            <div class="param-group">
+                <label>选择场景</label>
+                <select id="scene">
+                    <option value="livingRoom">客厅</option>
+                    <option value="bedroom">卧室</option>
+                    <option value="diningRoom">餐厅</option>
+                    <option value="entrance">玄关</option>
+                </select>
+            </div>
+            <div class="param-divider"></div>
+            <div class="param-group">
+                <label id="widthLabel">沙发宽度 (cm)</label>
+                <input type="number" id="referenceWidthInput" placeholder="参考宽度" min="1">
+            </div>
+            <div class="param-group">
+                <label>墙面宽度 (cm)</label>
+                <input type="number" id="wallWidthInput" placeholder="墙面宽度" value="350" min="1">
+            </div>
+            <div class="param-group">
+                <label>层高 (cm)</label>
+                <input type="number" id="wallHeightInput" placeholder="层高" value="260" min="50">
+            </div>
+            <div class="param-divider"></div>
+            <div class="param-group">
+                <label>挂画类型</label>
+                <select id="styleSelect">
+                    <option value="long">竖版挂画</option>
+                    <option value="square">方形挂画</option>
+                    <option value="landscape">横版挂画</option>
+                </select>
+            </div>
+            <!-- 折叠区域 -->
+            <div class="collapsible-section">
+                <div class="collapsible-header" id="paintingSettingsHeader">
+                    <span>更多设置</span>
+                    <span class="toggle-icon" id="toggleIcon">▼</span>
+                </div>
+                <div class="collapsible-content" id="paintingSettingsContent">
+                    <div class="param-group">
+                        <label>挂画宽度 (cm)</label>
+                        <input type="number" id="customWidthInput" placeholder="可选" min="1">
+                    </div>
+                    <div class="param-group">
+                        <label>挂画高度 (cm)</label>
+                        <input type="number" id="customHeightInput" placeholder="可选" min="1">
+                    </div>
+                    <div class="param-group">
+                        <label>画框颜色</label>
+                        <select id="frameColorSelect">
+                            <option value="none">无框画</option>
+                            <option value="black">黑色铝合金</option>
+                            <option value="gold">金色铝合金</option>
+                            <option value="red">红色铝合金</option>
+                            <option value="natural">原木色环保框</option>
+                            <option value="walnut">胡桃木环保框</option>
+                        </select>
+                    </div>
+                    <div class="param-group">
+                        <label>图片适配</label>
+                        <select id="imageFitMode">
+                            <option value="fill">填充</option>
+                            <option value="stretch">拉伸</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 预览区 -->
+        <section class="preview-section">
+            <div class="preview-card">
+                <div class="preview-header">
+                    <span class="preview-title">效果预览</span>
+                    <div style="display:flex;gap:8px;">
+                        <button class="icon-btn" title="全屏" onclick="toggleFullscreen()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="preview-canvas">
+                    <div class="preview-svg-wrapper">
+                        <svg id="simulationSvg" class="simulation-svg"></svg>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 结果面板 -->
+        <section class="result-panel">
+            <button class="calc-btn" id="calculateButton">开 始 计 算</button>
+            <div id="loading">计算中...</div>
+            <div class="error-message" id="error"></div>
+            <div class="result-content" id="result" style="margin-top:24px;">
+                <div class="result-item">
+                    <div class="result-value">—<span class="result-unit">cm</span></div>
+                    <div class="result-label">挂画宽度</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value">—<span class="result-unit">cm</span></div>
+                    <div class="result-label">挂画高度</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value">—<span class="result-unit">cm</span></div>
+                    <div class="result-label">离地高度</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 底部二维码 -->
+        <section class="qr-section">
+            <div class="qr-title">扫码设计实景效果图</div>
+            <div class="qr-code-section">
+                <div id="qrCode" style="width:180px;height:180px;background:#f5f5f5;border-radius:4px;margin:0 auto;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:12px;">二维码区域</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- JavaScript - 复用原有逻辑 -->
+    <script>
+        // 场景比例配置
+        const sceneRatios = {
+            livingRoom: { long: 0.3, square: 0.35, landscape: 0.618 },
+            bedroom: { long: 0.25, square: 0.3, landscape: 0.5 },
+            diningRoom: { long: 0.22, square: 0.28, landscape: 0.45 },
+            entrance: { long: 0.2, square: 0.25, landscape: 0.4 }
+        };
+        const defaultHangHeight = 150;
+
+        // DOM 元素
+        const sceneSelect = document.getElementById('scene');
+        const referenceWidthInput = document.getElementById('referenceWidthInput');
+        const wallWidthInput = document.getElementById('wallWidthInput');
+        const wallHeightInput = document.getElementById('wallHeightInput');
+        const styleSelect = document.getElementById('styleSelect');
+        const customWidthInput = document.getElementById('customWidthInput');
+        const customHeightInput = document.getElementById('customHeightInput');
+        const frameColorSelect = document.getElementById('frameColorSelect');
+        const imageFitMode = document.getElementById('imageFitMode');
+        const paintingImageInput = document.getElementById('paintingImageInput');
+        const roomImageInput = document.getElementById('roomImageInput');
+        const calculateButton = document.getElementById('calculateButton');
+        const resultDiv = document.getElementById('result');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const simulationSvg = document.getElementById('simulationSvg');
+
+        // 折叠功能
+        const paintingSettingsHeader = document.getElementById('paintingSettingsHeader');
+        const paintingSettingsContent = document.getElementById('paintingSettingsContent');
+        const toggleIcon = document.getElementById('toggleIcon');
+        paintingSettingsHeader.addEventListener('click', () => {
+            paintingSettingsContent.classList.toggle('expanded');
+            toggleIcon.classList.toggle('collapsed');
+        });
+
+        // 计算主函数
+        function calculate() {
+            const scene = sceneSelect.value;
+            const referenceWidth = parseFloat(referenceWidthInput.value);
+            const wallWidth = parseFloat(wallWidthInput.value);
+            const wallHeight = parseFloat(wallHeightInput.value);
+            const style = styleSelect.value;
+            const customWidth = parseFloat(customWidthInput.value);
+            const customHeight = parseFloat(customHeightInput.value);
+            const frameColor = frameColorSelect.value;
+            const fitMode = imageFitMode.value;
+
+            // 验证
+            if (!referenceWidth || referenceWidth <= 0) {
+                showError('请输入正确的沙发宽度');
+                return;
+            }
+            if (!wallWidth || wallWidth <= 0) {
+                showError('请输入正确的墙面宽度');
+                return;
+            }
+            if (!wallHeight || wallHeight < 50) {
+                showError('请输入正确的层高');
+                return;
+            }
+
+            hideError();
+
+            // 计算挂画尺寸
+            const ratio = sceneRatios[scene][style];
+            let displayWidth, displayHeight, initialHangHeight;
+
+            if (customWidth && customHeight) {
+                displayWidth = customWidth;
+                displayHeight = customHeight;
+            } else {
+                displayWidth = Math.round(referenceWidth * ratio * 10) / 10;
+                displayHeight = style === 'landscape'
+                    ? Math.round(displayWidth * 0.618 * 10) / 10
+                    : style === 'long'
+                        ? Math.round(displayWidth * 1.4 * 10) / 10
+                        : Math.round(displayWidth * 10) / 10;
+            }
+
+            initialHangHeight = Math.min(defaultHangHeight, Math.round(wallHeight * 0.4));
+
+            // 更新结果
+            updateResult(displayWidth, displayHeight, initialHangHeight);
+
+            // 生成预览SVG
+            generateSimulationSVG(scene, style, displayWidth, displayHeight, referenceWidth, wallWidth, wallHeight, initialHangHeight, frameColor);
+        }
+
+        function updateResult(w, h, hangH) {
+            resultDiv.innerHTML = `
+                <div class="result-item">
+                    <div class="result-value">${w}<span class="result-unit">cm</span></div>
+                    <div class="result-label">挂画宽度</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value">${h}<span class="result-unit">cm</span></div>
+                    <div class="result-label">挂画高度</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value">${hangH}<span class="result-unit">cm</span></div>
+                    <div class="result-label">离地高度</div>
+                </div>
+            `;
+        }
+
+        function showError(msg) {
+            errorDiv.textContent = msg;
+            errorDiv.style.display = 'block';
+        }
+        function hideError() {
+            errorDiv.style.display = 'none';
+        }
+
+        // SVG 生成
+        function generateSimulationSVG(scene, style, pWidth, pHeight, refWidth, wallW, wallH, initialHangH, frameColor) {
+            const svgWidth = 700;
+            const svgHeight = 420;
+            const wallPadding = 40;
+            const wallX = wallPadding;
+            const wallY = 60;
+            const wallWInner = svgWidth - wallPadding * 2;
+            const wallHInner = svgHeight - wallY - 40;
+
+            // 计算比例尺
+            const scale = Math.min(wallWInner / wallW, wallHInner / wallH);
+            const displayWallW = wallW * scale;
+            const displayWallH = wallH * scale;
+            const displayRefW = refWidth * scale;
+            const displayPW = pWidth * scale;
+            const displayPH = pHeight * scale;
+
+            const sofaH = Math.min(displayRefW * 0.4, 60);
+            const sofaY = wallY + wallHInner - sofaH - 20;
+            const sofaX = wallX + (wallWInner - displayRefW) / 2;
+
+            const paintingX = wallX + (wallWInner - displayPW) / 2;
+            const paintingY = wallY + (wallHInner - displayPH) / 2;
+
+            // Frame stroke
+            let frameStroke = '#1A1A1A';
+            if (frameColor === 'gold') frameStroke = '#C9A86C';
+            else if (frameColor === 'red') frameStroke = '#B33A3A';
+            else if (frameColor === 'natural') frameStroke = '#D4B896';
+            else if (frameColor === 'walnut') frameStroke = '#5D432C';
+            else if (frameColor === 'none') frameStroke = 'none';
+
+            // Base pattern for painting
+            let paintingFill = '#F0EDE8';
+            if (style === 'long') paintingFill = 'url(#landscapePattern)';
+            else if (style === 'landscape') paintingFill = 'url(#landscapePattern)';
+
+            let svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
+  <defs>
+    <pattern id="landscapePattern" patternUnits="userSpaceOnUse" width="60" height="40">
+      <rect width="60" height="40" fill="#E8E4DC"/>
+      <path d="M0 35 Q15 20 30 30 Q45 40 60 25" stroke="#C4B8A8" fill="none" stroke-width="1"/>
+      <path d="M0 20 Q20 10 40 18 Q55 25 60 15" stroke="#B8C4B8" fill="none" stroke-width="0.8"/>
+    </pattern>
+    <pattern id="sofaPattern" patternUnits="userSpaceOnUse" width="20" height="10">
+      <rect width="20" height="10" fill="#D8D4D0"/>
+      <line x1="0" y1="5" x2="20" y2="5" stroke="#C8C4C0" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="${svgWidth}" height="${svgHeight}" fill="#FAFAFA"/>
+
+  <!-- 墙面 -->
+  <rect x="${wallX}" y="${wallY}" width="${displayWallW}" height="${displayWallH}"
+        fill="#EEEBE6" stroke="#D4D0CC" stroke-width="1"/>
+  <!-- 墙面分割线（模拟踢脚线） -->
+  <line x1="${wallX}" y1="${wallY + displayWallH - 8}" x2="${wallX + displayWallW}" y2="${wallY + displayWallH - 8}"
+        stroke="#D4D0CC" stroke-width="1"/>
+
+  <!-- 沙发 -->
+  <g id="sofaGroup">
+    <rect x="${sofaX}" y="${sofaY}" width="${displayRefW}" height="${sofaH * 0.6}" rx="4" fill="#E0DCD8"/>
+    <rect x="${sofaX}" y="${sofaY + sofaH * 0.6}" width="${displayRefW}" height="${sofaH * 0.4}" rx="2" fill="#D0CCC8"/>
+    <ellipse cx="${sofaX + displayRefW * 0.15}" cy="${sofaY + sofaH * 0.25}" rx="${sofaH * 0.18}" ry="${sofaH * 0.18}" fill="#C8C4C0"/>
+    <ellipse cx="${sofaX + displayRefW * 0.85}" cy="${sofaY + sofaH * 0.25}" rx="${sofaH * 0.18}" ry="${sofaH * 0.18}" fill="#C8C4C0"/>
+  </g>
+
+  <!-- 挂画 -->
+  <g id="paintingGroup">
+    ${frameStroke !== 'none' ? `<rect x="${paintingX - 4}" y="${paintingY - 4}" width="${displayPW + 8}" height="${displayPH + 8}" fill="none" stroke="${frameStroke}" stroke-width="3" rx="2"/>` : ''}
+    <rect x="${paintingX}" y="${paintingY}" width="${displayPW}" height="${displayPH}" fill="${paintingFill}" rx="1"/>
+    <!-- 挂画内部装饰线 -->
+    <rect x="${paintingX + 8}" y="${paintingY + 8}" width="${displayPW - 16}" height="${displayPH - 16}" fill="none" stroke="#D0CCC8" stroke-width="0.5" rx="1"/>
+  </g>
+
+  <!-- 挂画高度标注 -->
+  <line x1="${wallX + displayWallW + 15}" y1="${paintingY + displayPH}" x2="${wallX + displayWallW + 15}" y2="${wallY + wallHInner}" stroke="#CCC" stroke-width="0.5"/>
+  <line x1="${wallX + displayWallW + 12}" y1="${paintingY + displayPH}" x2="${wallX + displayWallW + 18}" y2="${paintingY + displayPH}" stroke="#CCC" stroke-width="0.5"/>
+  <line x1="${wallX + displayWallW + 12}" y1="${wallY + wallHInner}" x2="${wallX + displayWallW + 18}" y2="${wallY + wallHInner}" stroke="#CCC" stroke-width="0.5"/>
+  <text x="${wallX + displayWallW + 22}" y="${(paintingY + displayPH + wallY + wallHInner) / 2}"
+        class="hang-height-text" font-size="9" fill="#999" text-anchor="start" dominant-baseline="middle">${pHeight}cm</text>
+
+  <!-- 沙发宽度标注 -->
+  <line x1="${sofaX}" y1="${sofaY - 12}" x2="${sofaX + displayRefW}" y2="${sofaY - 12}" stroke="#CCC" stroke-width="0.5"/>
+  <line x1="${sofaX}" y1="${sofaY - 15}" x2="${sofaX}" y2="${sofaY - 9}" stroke="#CCC" stroke-width="0.5"/>
+  <line x1="${sofaX + displayRefW}" y1="${sofaY - 15}" x2="${sofaX + displayRefW}" y2="${sofaY - 9}" stroke="#CCC" stroke-width="0.5"/>
+  <text x="${sofaX + displayRefW / 2}" y="${sofaY - 16}"
+        class="dimension-text" fill="#999" text-anchor="middle">${refWidth}cm</text>
+</svg>`;
+
+            simulationSvg.innerHTML = svg;
+        }
+
+        // 全屏切换
+        function toggleFullscreen() {
+            const container = document.querySelector('.preview-card');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // 事件绑定
+        calculateButton.addEventListener('click', calculate);
+
+        // 初始化
+        function init() {
+            generateSimulationSVG('livingRoom', 'long', 60, 84, 200, 350, 260, 150, 'black');
+        }
+        init();
+    </script>
+</body>
+</html>
