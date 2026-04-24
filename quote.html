@@ -332,6 +332,72 @@
             color: var(--text-secondary);
         }
 
+        .contact-card {
+            display: flex;
+            gap: 24px;
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-light);
+            background: var(--surface-raised);
+        }
+        .contact-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 120px;
+        }
+        .contact-item label {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+        }
+        .contact-item .value {
+            font-size: 14px;
+            color: var(--text);
+            font-weight: 500;
+        }
+        .contact-item .value.wechat {
+            color: var(--accent);
+            font-size: 15px;
+        }
+        .qr-upload {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .qr-upload label {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+        }
+        .qr-upload .upload-btn {
+            padding: 6px 14px;
+            background: var(--accent-soft);
+            border: 1px dashed var(--accent-light);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+            text-align: center;
+        }
+        .qr-upload .upload-btn:hover { background: var(--accent); color: white; border-style: solid; }
+        .qr-upload input[type="file"] { display: none; }
+        .qr-thumb {
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            display: none;
+        }
+        .qr-thumb.show { display: block; }
+
         /* Export helpers */
         .hide-for-export input[type="text"],
         .hide-for-export input[type="number"],
@@ -493,6 +559,16 @@
             }
         }
 
+        function previewQR(input) {
+            const file = input.files[0];
+            const img = input.closest('.qr-upload').querySelector('.qr-thumb');
+            if (file && img) {
+                const reader = new FileReader();
+                reader.onload = e => { img.src = e.target.result; img.classList.add('show'); };
+                reader.readAsDataURL(file);
+            }
+        }
+
         function setCurrentDate() {
             const d = new Date();
             document.getElementById('currentDate').textContent =
@@ -611,6 +687,10 @@
                     <label>联系地址</label>
                     <input type="text" id="customerAddress" placeholder="请输入">
                 </div>
+                <div class="form-group">
+                    <label>客户微信</label>
+                    <input type="text" id="customerWechat" placeholder="请输入">
+                </div>
             </div>
         </div>
 
@@ -674,6 +754,29 @@
                 <div class="footer-field">
                     <label>联系电话</label>
                     <input type="text" id="footerContactPhone" class="inline-input" value="18059018257">
+                </div>
+            </div>
+
+            <div class="contact-card">
+                <div class="contact-item">
+                    <label>微信</label>
+                    <span class="value wechat" id="wechatDisplay">请扫码添加</span>
+                </div>
+                <div class="contact-item">
+                    <label>电话</label>
+                    <span class="value">18059018257</span>
+                </div>
+                <div class="contact-item">
+                    <label>地址</label>
+                    <span class="value addr">福建省福州市仓山区建新镇后巷路2号</span>
+                </div>
+                <div class="qr-upload">
+                    <label>二维码</label>
+                    <div class="upload-btn">
+                        上传微信二维码
+                        <input type="file" accept="image/*" onchange="previewQR(this)">
+                    </div>
+                    <img class="qr-thumb" src="" alt="微信二维码">
                 </div>
             </div>
         </div>
