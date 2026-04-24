@@ -1079,31 +1079,16 @@
 
         async function generateEffect() {
             if (!roomImage) return;
-            showLoading('AI 正在识别墙面...');
-            statusText.textContent = 'AI 分析中';
             resetManualAdjust();
-
-            try {
-                const result = await analyzeRoomWithAI(roomImage);
-                aiResult = result;
-                hideLoading();
-                renderPreview();
-                statusText.textContent = '效果图已生成';
-                previewBtns.classList.remove('hidden');
-                manualPanel.classList.add('show');
-            } catch (err) {
-                console.error('AI analysis failed:', err);
-                hideLoading();
-                statusText.textContent = '已使用默认位置';
-                aiResult = {
-                    wall: getDefaultWallRegion(),
-                    description: 'AI 分析失败，已切换到默认墙面位置，可手动微调。',
-                    source: 'fallback'
-                };
-                renderPreview();
-                previewBtns.classList.remove('hidden');
-                manualPanel.classList.add('show');
-            }
+            aiResult = {
+                wall: getDefaultWallRegion(),
+                description: '使用默认位置，可拖动画作细调',
+                source: 'default'
+            };
+            renderPreview();
+            statusText.textContent = '效果图已生成';
+            previewBtns.classList.remove('hidden');
+            manualPanel.classList.add('show');
         }
 
         async function analyzeRoomWithAI(img) {
