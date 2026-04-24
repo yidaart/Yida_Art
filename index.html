@@ -1220,18 +1220,16 @@
             const imgH = roomImage.naturalHeight;
             const dims = calculatedDimensions || getRecommendedDimensions();
 
-            const displayW = canvas.offsetWidth;
-            const displayH = canvas.offsetHeight;
-            canvas.width = displayW;
-            canvas.height = displayH;
+            canvas.width = imgW;
+            canvas.height = imgH;
 
-            // 绘制原图（缩放填满 canvas）
-            ctx.drawImage(roomImage, 0, 0, displayW, displayH);
+            // 绘制原图（保持原始比例）
+            ctx.drawImage(roomImage, 0, 0, imgW, imgH);
 
             const wall = getAdjustedWall(aiResult.wall);
-            const wallCX = wall.centerX * displayW;
-            const wallCY = wall.centerY * displayH;
-            const wallPW = wall.width * displayW;
+            const wallCX = wall.centerX * imgW;
+            const wallCY = wall.centerY * imgH;
+            const wallPW = wall.width * imgW;
 
             // 计算 pxPerCm：墙面实际宽度(用户输入) / 墙面像素宽度
             // 这样画作尺寸直接按真实厘米换算成像素
@@ -1470,15 +1468,15 @@
             const point = getCanvasPointFromEvent(event);
             const dims = calculatedDimensions || getRecommendedDimensions();
             const wall = getAdjustedWall(aiResult.wall);
-            const dispW = canvas.width;
-            const dispH = canvas.height;
-            const wallPW = wall.width * dispW;
+            const imgW = roomImage.naturalWidth;
+            const imgH = roomImage.naturalHeight;
+            const wallPW = wall.width * imgW;
             const userWallW = parseFloat(wallWidthInput.value) || 350;
             const pxPerCm = calibration.pxPerCm || Math.max(wallPW / userWallW, 0.1);
             const paintW = dims.width * pxPerCm;
             const paintH = dims.height * pxPerCm;
-            const wallCX = wall.centerX * dispW;
-            const wallCY = wall.centerY * dispH;
+            const wallCX = wall.centerX * imgW;
+            const wallCY = wall.centerY * imgH;
 
             // 判断点击是否在画作范围内
             if (point.x >= wallCX - paintW/2 - 20 && point.x <= wallCX + paintW/2 + 20 &&
