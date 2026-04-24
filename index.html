@@ -881,7 +881,7 @@
                 }
             }
 
-            if (/^\s*ok[\s.!]*$/i.test(raw) || /位置基本正确|位置合适/.test(raw)) {
+            if (/^\s*ok[\s.!]*$/i.test(raw) || /位置基本正确|位置合适|返回成功|已收到/.test(raw)) {
                 return {
                     wall: fallbackWall,
                     description: 'AI 认为当前候选位置基本合适。',
