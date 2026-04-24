@@ -540,7 +540,7 @@
                             <label>上传房间照片</label>
                             <div class="upload-zone" id="uploadZone">
                                 <div class="icon">📷</div>
-                                <p>AI 识别墙面并生成透视效果图<br><span class="browse">选择文件</span></p>
+                                <p>上传房间照片<br><span class="browse">选择文件</span></p>
                             </div>
                             <input type="file" id="roomInput" accept="image/*" style="display:none">
                         </div>
@@ -570,7 +570,7 @@
                             </div>
                         </div>
 
-                        <button class="btn-primary" id="generateBtn">AI 生成透视效果图</button>
+                        <button class="btn-primary" id="generateBtn">生成效果图</button>
                     </div>
                 </div>
             </aside>
@@ -586,13 +586,13 @@
                         <div class="preview-empty" id="emptyState">
                             <div class="icon">🖼️</div>
                             <h4>上传你家照片</h4>
-                            <p>AI 将识别墙面并生成<br>透视效果预览图</p>
+                            <p>上传你家照片<br>查看挂画效果预览</p>
                         </div>
                         <div class="preview-main" id="previewMain">
                             <canvas id="canvas"></canvas>
 
                             <div class="ai-suggestion" id="aiSuggestion">
-                                <strong>AI 分析中...</strong>
+                                <strong>正在生成...</strong>
                             </div>
 
                             <div class="manual-panel" id="manualPanel">
@@ -600,7 +600,7 @@
                                     <span>挂画位置微调</span>
                                     <button class="manual-reset" id="closeManualBtn" style="border:none;background:none;font-size:16px;cursor:pointer;padding:0;line-height:1">×</button>
                                 </div>
-                                <div class="manual-hint">AI 先给出建议位置，遇到复杂空间时可手动细调。</div>
+                                <div class="manual-hint">拖动画作可微调位置。</div>
                                 <div class="manual-hint" id="calibrateHint">如尺寸看起来不准，可点击“参考物校准”，依次点选参考物左右两端。</div>
 
                                 <div class="slider-group">
@@ -644,7 +644,7 @@
 
                             <div class="loading-overlay" id="loadingOverlay">
                                 <div class="spinner"></div>
-                                <div class="loading-text" id="loadingText">AI 正在分析墙面...</div>
+                                <div class="loading-text" id="loadingText">正在生成效果图...</div>
                             </div>
                         </div>
                     </div>
