@@ -186,6 +186,11 @@
         }
         .result-box .unit { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
         .result-box .hang-height { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+        .result-box .formula-note {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
 
         .ref-info {
             display: flex;
@@ -212,6 +217,36 @@
         .upload-zone .icon { font-size: 26px; margin-bottom: 6px; }
         .upload-zone p { font-size: 13px; color: var(--text-secondary); }
         .upload-zone .browse { color: var(--accent); font-weight: 500; }
+
+        .api-box {
+            margin: 16px 0 10px;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface-raised);
+        }
+        .api-box .api-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        .api-box .api-help {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        .api-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .api-status {
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
 
         .more-toggle {
             display: flex;
@@ -523,6 +558,7 @@
                             <div class="size" id="recSize">66×94</div>
                             <div class="unit">厘米 (cm)</div>
                             <div class="hang-height">推荐挂高：<span id="hangHeight">150</span> cm</div>
+                            <div class="formula-note">推荐尺寸按固定公式计算，预览落图比例单独计算。</div>
                         </div>
 
                         <div class="form-row">
@@ -543,6 +579,17 @@
                                 <p>上传房间照片<br><span class="browse">选择文件</span></p>
                             </div>
                             <input type="file" id="roomInput" accept="image/*" style="display:none">
+                        </div>
+
+                        <div class="api-box">
+                            <div class="api-title">AI Key</div>
+                            <input type="password" id="apiKeyInput" placeholder="输入用于房间分析的 API Key">
+                            <div class="api-actions">
+                                <button class="manual-reset primary" id="saveApiKeyBtn" type="button">保存本机</button>
+                                <button class="manual-reset" id="clearApiKeyBtn" type="button">清除</button>
+                            </div>
+                            <div class="api-status" id="apiStatus">未配置 AI Key，当前只能生成默认位置。</div>
+                            <div class="api-help">页面不再内置密钥，密钥只保存在当前浏览器本地。</div>
                         </div>
 
                         <div class="more-toggle" id="moreToggle">
@@ -654,9 +701,8 @@
     </div>
 
     <script>
-        const API_KEY = 'sk-cp-JNXixUcaShr8benw76-YN2Yjbm__k4oDBx1Xj3yoRpxRpwNMJqoSDr2tEWXUXD7ZryF8FxVb3gP5bhqd9o3O-9raKz0arnNuO0V4GOhw3n0zuy6WQatvPic';
-
         // Config
+        const API_STORAGE_KEY = 'yida-art-api-key';
         const SCENE_RATIOS = {
             livingRoom: { long: 0.3, square: 0.35, landscape: 0.618 },
             bedroom: { long: 0.25, square: 0.30, landscape: 0.618 },
@@ -722,6 +768,10 @@
         const wallHeightInput = document.getElementById('wallHeight');
         const uploadZone = document.getElementById('uploadZone');
         const roomInput = document.getElementById('roomInput');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+        const clearApiKeyBtn = document.getElementById('clearApiKeyBtn');
+        const apiStatus = document.getElementById('apiStatus');
         const moreToggle = document.getElementById('moreToggle');
         const moreContent = document.getElementById('moreContent');
         const frameColors = document.querySelectorAll('.frame-color');
@@ -762,14 +812,68 @@
         let paintImage = null;
         let selectedFrame = 'none';
         let aiResult = null;
-        let calculatedDimensions = null;
+        let recommendedSize = null;
         let manualAdjust = { offsetX: 0, offsetY: 0, scale: 1 };
+        let runtimeApiKey = '';
         let calibration = {
             active: false,
             points: [],
             pxPerCm: null
         };
         let dragState = { active: false, startX: 0, startY: 0, startOffsetX: 0, startOffsetY: 0 };
+
+        function getApiKey() {
+            const inputValue = apiKeyInput.value.trim();
+            return inputValue || runtimeApiKey;
+        }
+
+        function maskApiKey(key) {
+            if (!key) return '未配置';
+            if (key.length <= 10) return key;
+            return `${key.slice(0, 4)}...${key.slice(-4)}`;
+        }
+
+        function updateApiStatus() {
+            const key = getApiKey();
+            apiStatus.textContent = key
+                ? `已配置 AI Key：${maskApiKey(key)}`
+                : '未配置 AI Key，当前只能生成默认位置。';
+        }
+
+        function saveApiKey() {
+            const key = apiKeyInput.value.trim();
+            runtimeApiKey = key;
+            try {
+                if (key) {
+                    localStorage.setItem(API_STORAGE_KEY, key);
+                } else {
+                    localStorage.removeItem(API_STORAGE_KEY);
+                }
+            } catch (err) {
+                console.warn('Failed to persist api key:', err);
+            }
+            updateApiStatus();
+        }
+
+        function clearApiKey() {
+            runtimeApiKey = '';
+            apiKeyInput.value = '';
+            try {
+                localStorage.removeItem(API_STORAGE_KEY);
+            } catch (err) {
+                console.warn('Failed to clear api key:', err);
+            }
+            updateApiStatus();
+        }
+
+        function loadApiKey() {
+            try {
+                runtimeApiKey = localStorage.getItem(API_STORAGE_KEY) || '';
+            } catch (err) {
+                runtimeApiKey = '';
+            }
+            updateApiStatus();
+        }
 
         function getDefaultWallRegion() {
             const base = DEFAULT_WALL_REGIONS[currentScene] || DEFAULT_WALL_REGIONS.livingRoom;
@@ -834,9 +938,47 @@
             };
         }
 
-        function getRecommendedDimensions() {
-            const base = calculateDimensions();
-            return base;
+        function getRecommendedSize() {
+            return calculateDimensions();
+        }
+
+        function getPreviewScale(wallRegion, imageWidth) {
+            const userWallW = parseFloat(wallWidthInput.value) || 350;
+            const wallPixelWidth = wallRegion.width * imageWidth;
+            const estimatedPxPerCm = Math.max(wallPixelWidth / userWallW, 0.1);
+            return {
+                wallPixelWidth,
+                userWallW,
+                pxPerCm: calibration.pxPerCm || estimatedPxPerCm,
+                isCalibrated: Boolean(calibration.pxPerCm)
+            };
+        }
+
+        function getPreviewPlacement() {
+            const size = recommendedSize || getRecommendedSize();
+            const imgW = canvas.width;
+            const imgH = canvas.height;
+            const wallRegion = getAdjustedWall(aiResult.wall);
+            const centerX = wallRegion.centerX * imgW;
+            const centerY = wallRegion.centerY * imgH;
+            const previewScale = getPreviewScale(wallRegion, imgW);
+            const paintPixelWidth = size.width * previewScale.pxPerCm;
+            const paintPixelHeight = size.height * previewScale.pxPerCm;
+
+            return {
+                size,
+                imgW,
+                imgH,
+                wallRegion,
+                centerX,
+                centerY,
+                wallPixelWidth: previewScale.wallPixelWidth,
+                userWallW: previewScale.userWallW,
+                pxPerCm: previewScale.pxPerCm,
+                paintPixelWidth,
+                paintPixelHeight,
+                isCalibrated: previewScale.isCalibrated
+            };
         }
 
         function getAdjustedWall(baseWall) {
@@ -986,11 +1128,11 @@
         }
 
         function updateRecommendation() {
-            const dims = getRecommendedDimensions();
-            recWidthVal.textContent = dims.width + ' cm';
-            recSize.textContent = dims.width + '×' + dims.height;
-            hangHeightEl.textContent = dims.hangHeight;
-            calculatedDimensions = dims;
+            const size = getRecommendedSize();
+            recWidthVal.textContent = size.width + ' cm';
+            recSize.textContent = size.width + '×' + size.height;
+            hangHeightEl.textContent = size.hangHeight;
+            recommendedSize = size;
             if (aiResult) renderPreview();
         }
 
@@ -1038,6 +1180,9 @@
 
         uploadZone.addEventListener('click', () => roomInput.click());
         paintingZone.addEventListener('click', () => paintingInput.click());
+        saveApiKeyBtn.addEventListener('click', saveApiKey);
+        clearApiKeyBtn.addEventListener('click', clearApiKey);
+        apiKeyInput.addEventListener('change', saveApiKey);
 
         roomInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -1079,6 +1224,11 @@
 
         async function generateEffect() {
             if (!roomImage) return;
+
+            // 先显示加载态
+            showLoading('正在分析房间布局...');
+
+            // 先用默认位置渲染，AI 回来后更新
             resetManualAdjust();
             aiResult = {
                 wall: getDefaultWallRegion(),
@@ -1086,17 +1236,50 @@
                 source: 'default'
             };
             renderPreview();
-            statusText.textContent = '效果图已生成';
+            statusText.textContent = 'AI 分析中...';
             previewBtns.classList.remove('hidden');
             manualPanel.classList.add('show');
+
+            // 调用 AI 分析（失败时自动降级）
+            try {
+                const apiKey = getApiKey();
+                if (!apiKey) {
+                    aiResult = {
+                        wall: getDefaultWallRegion(),
+                        description: '未配置 AI Key，已使用默认位置。当前尺寸为估算值，校准后会更准确。',
+                        source: 'fallback'
+                    };
+                    renderPreview();
+                    statusText.textContent = '效果图已生成（未启用 AI）';
+                } else {
+                    const size = recommendedSize || getRecommendedSize();
+                    const aiResultFromCall = await analyzeRoomWithAI(roomImage, size, apiKey);
+                    if (aiResultFromCall) {
+                        aiResult = aiResultFromCall;
+                        renderPreview();
+                        statusText.textContent = '效果图已生成';
+                    }
+                }
+            } catch (err) {
+                console.warn('AI 分析失败，使用默认位置：', err);
+                aiResult = {
+                    wall: getDefaultWallRegion(),
+                    description: 'AI 分析不可用，已使用默认位置',
+                    source: 'fallback'
+                };
+                renderPreview();
+                statusText.textContent = '效果图已生成（AI 降级）';
+            } finally {
+                hideLoading();
+            }
         }
 
-        async function analyzeRoomWithAI(img) {
+        async function analyzeRoomWithAI(img, size, apiKey) {
             console.log('Starting AI wall analysis...');
 
-            // 缩小图片以节省 token
+            // 缩小图片以节省 token（与 renderPreview 保持一致，统一用 1200）
             const canvas = document.createElement('canvas');
-            const maxSize = 768;
+            const maxSize = 1200;
             const scale = Math.min(1, maxSize / Math.max(img.naturalWidth, img.naturalHeight));
             canvas.width = img.naturalWidth * scale;
             canvas.height = img.naturalHeight * scale;
@@ -1105,7 +1288,6 @@
 
             const sceneNames = { livingRoom: '客厅', bedroom: '卧室', diningRoom: '餐厅', entrance: '玄关' };
             const sceneName = sceneNames[currentScene] || '客厅';
-            const dims = calculatedDimensions || getRecommendedDimensions();
             const fallbackWall = getDefaultWallRegion();
 
             // 在图片上预先画一个候选画框区域，引导 AI 注意力
@@ -1127,7 +1309,7 @@
 
             const prompt = `这是一张${sceneName}照片。
 红色虚线框是我预估的挂画位置。
-推荐画框尺寸约为 ${dims.width} x ${dims.height} cm。
+推荐画框尺寸约为 ${size.width} x ${size.height} cm。
 请只返回 JSON，不要输出任何额外说明。
 如果红框位置基本正确，返回：
 {"status":"ok","reason":"一句简短中文说明"}
@@ -1142,7 +1324,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + API_KEY
+                    'Authorization': 'Bearer ' + apiKey
                 },
                 body: JSON.stringify({ prompt, image_url: markedImage })
             });
@@ -1201,36 +1383,29 @@
         function renderPreview() {
             if (!aiResult || !roomImage) return;
 
-            const imgW = roomImage.naturalWidth;
-            const imgH = roomImage.naturalHeight;
-            const dims = calculatedDimensions || getRecommendedDimensions();
-
+            // 限制 canvas 尺寸，避免撑爆容器
+            const maxW = 1200;
+            const maxH = 800;
+            const scale = Math.min(1, maxW / roomImage.naturalWidth, maxH / roomImage.naturalHeight);
+            const imgW = Math.round(roomImage.naturalWidth * scale);
+            const imgH = Math.round(roomImage.naturalHeight * scale);
             canvas.width = imgW;
             canvas.height = imgH;
 
             // 绘制原图（保持原始比例）
             ctx.drawImage(roomImage, 0, 0, imgW, imgH);
 
-            const wall = getAdjustedWall(aiResult.wall);
-            const wallCX = wall.centerX * imgW;
-            const wallCY = wall.centerY * imgH;
-            const wallPW = wall.width * imgW;
-
-            // 计算 pxPerCm：墙面实际宽度(用户输入) / 墙面像素宽度
-            // 这样画作尺寸直接按真实厘米换算成像素
-            const userWallW = parseFloat(wallWidthInput.value) || 350;
-            const pxPerCm = calibration.pxPerCm || Math.max(wallPW / userWallW, 0.1);
-            const paintW = dims.width * pxPerCm;
-            const paintH = dims.height * pxPerCm;
-
-            // 画作中心点（直接用墙面中心）
-            const paintCenterX = wallCX;
-            const paintCenterY = wallCY;
+            const placement = getPreviewPlacement();
+            const paintCenterX = placement.centerX;
+            const paintCenterY = placement.centerY;
 
             console.log('DEBUG:', {
-                userWallW, wallPW, pxPerCm,
-                dims: dims,
-                paintW, paintH,
+                userWallW: placement.userWallW,
+                wallPixelWidth: placement.wallPixelWidth,
+                pxPerCm: placement.pxPerCm,
+                recommendedSize: placement.size,
+                paintPixelWidth: placement.paintPixelWidth,
+                paintPixelHeight: placement.paintPixelHeight,
                 paintCenterX, paintCenterY
             });
 
@@ -1244,10 +1419,10 @@
             ctx.shadowOffsetY = 4;
 
             // 画框背景（比画芯大，往外偏移 frameW）
-            const frameW = paintW * 0.04;
+            const frameW = placement.paintPixelWidth * 0.04;
             if (selectedFrame !== 'none' && FRAME_COLORS[selectedFrame]) {
-                const halfW = paintW / 2 + frameW;
-                const halfH = paintH / 2 + frameW;
+                const halfW = placement.paintPixelWidth / 2 + frameW;
+                const halfH = placement.paintPixelHeight / 2 + frameW;
                 ctx.fillStyle = FRAME_COLORS[selectedFrame];
                 ctx.fillRect(paintCenterX - halfW, paintCenterY - halfH, halfW * 2, halfH * 2);
             }
@@ -1255,15 +1430,20 @@
             // 画芯（使用 drawImage 直接绘制，简单可靠）
             if (paintImage) {
                 ctx.drawImage(paintImage,
-                    paintCenterX - paintW/2,
-                    paintCenterY - paintH/2,
-                    paintW,
-                    paintH
+                    paintCenterX - placement.paintPixelWidth / 2,
+                    paintCenterY - placement.paintPixelHeight / 2,
+                    placement.paintPixelWidth,
+                    placement.paintPixelHeight
                 );
             } else {
                 // 无画芯时绘制纯色
                 ctx.fillStyle = '#e8e4df';
-                ctx.fillRect(paintCenterX - paintW/2, paintCenterY - paintH/2, paintW, paintH);
+                ctx.fillRect(
+                    paintCenterX - placement.paintPixelWidth / 2,
+                    paintCenterY - placement.paintPixelHeight / 2,
+                    placement.paintPixelWidth,
+                    placement.paintPixelHeight
+                );
             }
 
             ctx.restore();
@@ -1293,20 +1473,20 @@
             }
 
             // 更新UI
-            sizeTag.textContent = dims.width + '×' + dims.height + ' cm';
+            sizeTag.textContent = `${placement.size.width}×${placement.size.height} cm · ${placement.isCalibrated ? '已校准' : '估算'}`;
             sizeTag.classList.add('show');
 
             const sourceLabel = {
-                'ai-json': 'AI 已修正',
-                'ai-text': 'AI 已修正',
-                'ai-ok': 'AI 认可',
+                'ai-json': 'AI 已修正位置',
+                'ai-text': 'AI 已修正位置',
+                'ai-ok': 'AI 认可位置',
                 'fallback': '默认位置'
-            }[aiResult.source] || 'AI 建议';
+            }[aiResult.source] || 'AI 建议位置';
 
             aiSuggestion.innerHTML = `
-                <strong>${dims.width}×${dims.height}cm</strong><br>
+                <strong>${placement.size.width}×${placement.size.height}cm</strong><br>
                 ${aiResult.description || ''}
-                <div class="meta">${SCENE_LABELS[currentScene].replace('宽度（cm）', '')} · ${STYLE_NAMES[currentStyle]}</div>
+                <div class="meta">${sourceLabel} · ${SCENE_LABELS[currentScene].replace('宽度（cm）', '')} · ${STYLE_NAMES[currentStyle]} · ${placement.isCalibrated ? '真实比例' : '墙区估算比例'}</div>
             `;
             aiSuggestion.classList.remove('hidden');
         }
@@ -1451,21 +1631,11 @@
             if (calibration.active) return;
 
             const point = getCanvasPointFromEvent(event);
-            const dims = calculatedDimensions || getRecommendedDimensions();
-            const wall = getAdjustedWall(aiResult.wall);
-            const imgW = roomImage.naturalWidth;
-            const imgH = roomImage.naturalHeight;
-            const wallPW = wall.width * imgW;
-            const userWallW = parseFloat(wallWidthInput.value) || 350;
-            const pxPerCm = calibration.pxPerCm || Math.max(wallPW / userWallW, 0.1);
-            const paintW = dims.width * pxPerCm;
-            const paintH = dims.height * pxPerCm;
-            const wallCX = wall.centerX * imgW;
-            const wallCY = wall.centerY * imgH;
+            const placement = getPreviewPlacement();
 
             // 判断点击是否在画作范围内
-            if (point.x >= wallCX - paintW/2 - 20 && point.x <= wallCX + paintW/2 + 20 &&
-                point.y >= wallCY - paintH/2 - 20 && point.y <= wallCY + paintH/2 + 20) {
+            if (point.x >= placement.centerX - placement.paintPixelWidth / 2 - 20 && point.x <= placement.centerX + placement.paintPixelWidth / 2 + 20 &&
+                point.y >= placement.centerY - placement.paintPixelHeight / 2 - 20 && point.y <= placement.centerY + placement.paintPixelHeight / 2 + 20) {
                 dragState.active = true;
                 dragState.startX = point.x;
                 dragState.startY = point.y;
@@ -1483,8 +1653,8 @@
             const dy = point.y - dragState.startY;
 
             if (roomImage) {
-                manualAdjust.offsetX = clamp(dragState.startOffsetX + dx / roomImage.naturalWidth, -0.2, 0.2);
-                manualAdjust.offsetY = clamp(dragState.startOffsetY + dy / roomImage.naturalHeight, -0.2, 0.2);
+                manualAdjust.offsetX = clamp(dragState.startOffsetX + dx / canvas.width, -0.2, 0.2);
+                manualAdjust.offsetY = clamp(dragState.startOffsetY + dy / canvas.height, -0.2, 0.2);
 
                 offsetXSlider.value = Math.round(manualAdjust.offsetX * 100);
                 offsetYSlider.value = Math.round(manualAdjust.offsetY * 100);
@@ -1507,6 +1677,7 @@
             }
         });
 
+        loadApiKey();
         updateRecommendation();
         updateManualLabels();
         console.log('Script initialized');
