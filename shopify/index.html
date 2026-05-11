@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yida Gallery — Wall Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fafafa; --surface: #fff; --text: #1a1a1a; --text-secondary: #666; --text-muted: #999;
+            --accent: #8b5a2b; --accent-light: #c49a6c; --border: #e8e8e8; --border-light: #f0f0f0;
+            --shadow: 0 2px 12px rgba(0,0,0,0.05); --radius: 8px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+        .main { padding: 0; }
+        .params-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px; padding: 20px 28px; background: var(--surface); border-bottom: 1px solid var(--border); }
+        .param-group { display: flex; flex-direction: column; gap: 6px; min-width: 120px; }
+        .param-group label { font-size: 10px; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase; font-weight: 500; }
+        .param-group select, .param-group input { height: 38px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: border-color 0.2s; }
+        .param-group select:focus, .param-group input:focus { outline: none; border-color: var(--accent); }
+        .param-divider { width: 1px; height: 38px; background: var(--border); align-self: center; margin-bottom: -6px; }
+        .preview-area { display: flex; justify-content: center; padding: 32px; background: var(--bg); }
+        .preview-card { width: 100%; max-width: 800px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+        .preview-title { font-size: 10px; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; }
+        .preview-canvas { display: flex; align-items: center; justify-content: center; padding: 36px; min-height: 380px; background: linear-gradient(180deg, #f8f8f8 0%, #fafafa 100%); }
+        .preview-svg-wrapper { width: 100%; max-width: 600px; }
+        .result-bar { display: flex; justify-content: center; align-items: center; gap: 32px; padding: 16px 20px; background: var(--surface); border-top: 1px solid var(--border); }
+        .result-item { display: flex; flex-direction: column; align-items: center; }
+        .result-value { font-size: 28px; font-weight: 600; letter-spacing: -1px; color: var(--text); }
+        .result-unit { font-size: 12px; color: var(--text-muted); }
+        .btn-quote { padding: 10px 24px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: background 0.2s; font-family: inherit; text-decoration: none; display: inline-block; }
+        .btn-quote:hover { background: #7a4f26; }
+        .footer-info { text-align: center; padding: 20px; font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
+        .footer-info a { color: var(--accent); text-decoration: none; }
+        .simulation-svg text { font-family: 'Inter', sans-serif; }
+        .wall-path { fill: #e8e4e0; stroke: #d4d0cc; stroke-width: 1; }
+        .frame-path { fill: none; stroke-width: 3; }
+        .frame-black { stroke: #1a1a1a; }
+        .frame-gold { stroke: #c9a86c; }
+        .frame-white { stroke: #e0e0e0; }
+        .frame-natural { stroke: #d4b896; }
+        .frame-walnut { stroke: #5d432c; }
+        .frame-none { stroke: none; }
+        #paintingGroup { cursor: grab; }
+        #paintingGroup:active { cursor: grabbing; }
+        .scale-line { stroke: #ccc; stroke-width: 0.5; }
+        @media (max-width: 640px) {
+            .params-bar { gap: 12px; padding: 14px 16px; }
+            .param-group { min-width: 90px; }
+            .preview-area { padding: 16px; }
+            .preview-canvas { padding: 24px; min-height: 280px; }
+            .result-bar { gap: 16px; }
+            .result-value { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="params-bar">
+            <div class="param-group">
+                <label>Wall Width (cm)</label>
+                <input type="number" id="wallWidth" value="300" min="100" max="800" step="10" oninput="updatePreview()">
+            </div>
+            <div class="param-group">
+                <label>Wall Height (cm)</label>
+                <input type="number" id="wallHeight" value="260" min="100" max="400" step="10" oninput="updatePreview()">
+            </div>
+            <div class="param-divider"></div>
+            <div class="param-group">
+                <label>Painting W (cm)</label>
+                <input type="number" id="paintingW" value="80" min="20" max="300" step="1" oninput="updatePreview()">
+            </div>
+            <div class="param-group">
+                <label>Painting H (cm)</label>
+                <input type="number" id="paintingH" value="120" min="20" max="300" step="1" oninput="updatePreview()">
+            </div>
+            <div class="param-divider"></div>
+            <div class="param-group">
+                <label>Frame Color</label>
+                <select id="frameColor" onchange="updatePreview()">
+                    <option value="none">No Frame</option>
+                    <option value="black" selected>Black</option>
+                    <option value="gold">Gold</option>
+                    <option value="white">White</option>
+                    <option value="natural">Natural Wood</option>
+                    <option value="walnut">Walnut</option>
+                </select>
+            </div>
+            <div class="param-group">
+                <label>Wall Color</label>
+                <select id="wallColor" onchange="updatePreview()">
+                    <option value="#e8e4e0">Warm White</option>
+                    <option value="#ffffff">Pure White</option>
+                    <option value="#d5cfc7">Warm Gray</option>
+                    <option value="#c5c0b8">Mid Gray</option>
+                    <option value="#2c2c2c">Dark Charcoal</option>
+                </select>
+            </div>
+            <div class="param-group">
+                <label>Painting Style</label>
+                <select id="paintingStyle" onchange="updatePreview()">
+                    <option value="abstract">Abstract</option>
+                    <option value="landscape">Landscape</option>
+                    <option value="portrait">Portrait</option>
+                    <option value="still-life">Still Life</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="preview-area">
+            <div class="preview-card">
+                <div class="preview-header">
+                    <span class="preview-title">Wall Preview</span>
+                    <span class="preview-title" style="color:var(--text-secondary)">Drag painting to reposition</span>
+                </div>
+                <div class="preview-canvas">
+                    <div class="preview-svg-wrapper">
+                        <svg id="wallSvg" viewBox="0 0 600 520" class="simulation-svg" preserveAspectRatio="xMidYMid meet"></svg>
+                    </div>
+                </div>
+                <div class="result-bar">
+                    <div class="result-item">
+                        <div class="result-value" id="displayArea">0.96</div>
+                        <div class="result-unit">m²</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-value" id="displayPrice">$960</div>
+                        <div class="result-unit">estimated</div>
+                    </div>
+                    <a class="btn-quote" id="quoteLink" href="./quote.html" target="_blank">Get Quote →</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-info">
+            <a href="./quote.html" target="_blank">Open Full Quotation Tool</a> &nbsp;·&nbsp; Yida Gallery &nbsp;·&nbsp; yidagallery.com
+        </div>
+    </div>
+
+    <script>
+        const PRICE_PER_SQM = 1000;
+
+        function getStyleColors(style) {
+            const palettes = {
+                'abstract': ['#8b5a2b', '#c49a6c', '#4a6741', '#d4a574', '#2c3e50'],
+                'landscape': ['#4a7c59', '#87a96b', '#6b8fae', '#8fbc8f', '#556b2f'],
+                'portrait': ['#d4a574', '#c49a6c', '#a0522d', '#8b7355', '#cd853f'],
+                'still-life': ['#8b4513', '#a0522d', '#6b8e23', '#b8860b', '#556b2f']
+            };
+            return palettes[style] || palettes['abstract'];
+        }
+
+        function generatePaintingSvg(style) {
+            const colors = getStyleColors(style);
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            let content = '';
+            const w = 100, h = 100;
+
+            if (style === 'abstract') {
+                for (let i = 0; i < 12; i++) {
+                    const cx = Math.random() * 80 + 10, cy = Math.random() * 80 + 10;
+                    const r = Math.random() * 25 + 8;
+                    const c = colors[Math.floor(Math.random() * colors.length)];
+                    content += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}" opacity="${Math.random()*0.5+0.3}"/>`;
+                }
+                for (let i = 0; i < 5; i++) {
+                    content += `<path d="M${Math.random()*80+10} ${Math.random()*80+10} Q${Math.random()*60+20} ${Math.random()*60+20} ${Math.random()*80+10} ${Math.random()*80+10}" stroke="${colors[i%colors.length]}" stroke-width="${Math.random()*3+1}" fill="none" opacity="0.5"/>`;
+                }
+            } else if (style === 'landscape') {
+                content += `<rect x="0" y="40" width="100" height="60" fill="${colors[0]}" opacity="0.6"/>`;
+                content += `<rect x="0" y="60" width="100" height="40" fill="${colors[1]}" opacity="0.5"/>`;
+                content += `<rect x="0" y="20" width="100" height="25" fill="${colors[2]}" opacity="0.4"/>`;
+                content += `<circle cx="75" cy="18" r="8" fill="${colors[3]}" opacity="0.5"/>`;
+                for (let i = 0; i < 3; i++) {
+                    content += `<path d="M${i*35+5} 50 Q${i*35+20} 35 ${i*35+30} 50" stroke="${colors[4]}" stroke-width="2" fill="none" opacity="0.4"/>`;
+                }
+            } else if (style === 'portrait') {
+                content += `<ellipse cx="50" cy="35" rx="18" ry="22" fill="${colors[0]}" opacity="0.4"/>`;
+                content += `<rect x="30" y="55" width="40" height="25" rx="5" fill="${colors[1]}" opacity="0.3"/>`;
+                content += `<ellipse cx="42" cy="30" rx="4" ry="5" fill="${colors[2]}" opacity="0.3"/>`;
+                content += `<ellipse cx="58" cy="30" rx="4" ry="5" fill="${colors[2]}" opacity="0.3"/>`;
+                content += `<circle cx="50" cy="50" r="15" fill="${colors[3]}" opacity="0.15"/>`;
+                content += `<rect x="0" y="0" width="100" height="100" fill="${colors[4]}" opacity="0.08"/>`;
+            } else {
+                content += `<rect x="20" y="50" width="60" height="40" rx="3" fill="${colors[0]}" opacity="0.3"/>`;
+                content += `<ellipse cx="50" cy="30" rx="20" ry="18" fill="${colors[1]}" opacity="0.35"/>`;
+                content += `<circle cx="50" cy="20" r="10" fill="${colors[2]}" opacity="0.25"/>`;
+                content += `<rect x="0" y="0" width="100" height="25" fill="${colors[3]}" opacity="0.15"/>`;
+                for (let i = 0; i < 6; i++) {
+                    content += `<circle cx="${Math.random()*70+15}" cy="${Math.random()*40+55}" r="${Math.random()*4+1}" fill="${colors[4]}" opacity="0.4"/>`;
+                }
+            }
+            return `<defs><pattern id="paintingPattern" patternUnits="userSpaceOnUse" width="100" height="100">${content}</pattern></defs>`;
+        }
+
+        let dragPainting = false, dragStartX = 0, dragStartY = 0;
+        let paintingX = 300, paintingY = 260;
+
+        function updatePreview() {
+            const wallW = parseInt(document.getElementById('wallWidth').value) || 300;
+            const wallH = parseInt(document.getElementById('wallHeight').value) || 260;
+            const pW = parseInt(document.getElementById('paintingW').value) || 80;
+            const pH = parseInt(document.getElementById('paintingH').value) || 120;
+            const frameColor = document.getElementById('frameColor').value;
+            const wallColor = document.getElementById('wallColor').value;
+            const style = document.getElementById('paintingStyle').value;
+
+            const svgW = 600, svgH = 520;
+            const padding = 60;
+            const scale = Math.min((svgW - padding * 2) / wallW, (svgH - padding * 2) / wallH);
+            const wallSvgW = wallW * scale, wallSvgH = wallH * scale;
+            const wallX = (svgW - wallSvgW) / 2, wallY = (svgH - wallSvgH) / 2;
+            const pSvgW = pW * scale, pSvgH = pH * scale;
+
+            // Keep painting centered on wall if not dragged
+            if (!dragPainting) {
+                paintingX = wallX + (wallSvgW - pSvgW) / 2;
+                paintingY = wallY + (wallSvgH - pSvgH) / 2;
+            }
+            // Clamp painting to wall
+            paintingX = Math.max(wallX, Math.min(wallX + wallSvgW - pSvgW, paintingX));
+            paintingY = Math.max(wallY, Math.min(wallY + wallSvgH - pSvgH, paintingY));
+
+            let svg = generatePaintingSvg(style);
+            svg += `<rect x="${wallX}" y="${wallY}" width="${wallSvgW}" height="${wallSvgH}" class="wall-path" fill="${wallColor}"/>`;
+
+            // Baseboard
+            svg += `<line x1="${wallX}" y1="${wallY + wallSvgH}" x2="${wallX + wallSvgW}" y2="${wallY + wallSvgH}" stroke="#ccc" stroke-width="3"/>`;
+
+            // Scale marker
+            const scaleY = wallY + wallSvgH + 30;
+            svg += `<line x1="${wallX}" y1="${scaleY}" x2="${wallX + 100}" y2="${scaleY}" class="scale-line"/><text x="${wallX + 50}" y="${scaleY + 15}" text-anchor="middle" font-size="9" fill="#999">1m</text>`;
+
+            const frameClass = frameColor === 'none' ? 'frame-none' : `frame-${frameColor}`;
+
+            // Painting group
+            svg += `<g id="paintingGroup" style="cursor:grab">`;
+            svg += `<rect x="${paintingX}" y="${paintingY}" width="${pSvgW}" height="${pSvgH}" fill="url(#paintingPattern)"/>`;
+            if (frameColor !== 'none') {
+                const fw = 3;
+                svg += `<rect x="${paintingX - fw}" y="${paintingY - fw}" width="${pSvgW + fw * 2}" height="${pSvgH + fw * 2}" class="frame-path ${frameClass}"/>`;
+            }
+            // Subtle glass reflection
+            svg += `<rect x="${paintingX}" y="${paintingY}" width="${pSvgW}" height="${pSvgH}" fill="white" opacity="0.06"/>`;
+            svg += `<line x1="${paintingX + pSvgW * 0.2}" y1="${paintingY}" x2="${paintingX + pSvgW * 0.1}" y2="${paintingY + pSvgH}" stroke="white" stroke-width="${pSvgW * 0.03}" opacity="0.04"/>`;
+            svg += `</g>`;
+
+            // Size labels
+            svg += `<text x="${paintingX + pSvgW / 2}" y="${paintingY - 8}" text-anchor="middle" font-size="10" fill="#999">${pW} cm</text>`;
+            svg += `<text x="${paintingX - 8}" y="${paintingY + pSvgH / 2}" text-anchor="middle" font-size="10" fill="#999" transform="rotate(-90 ${paintingX - 8} ${paintingY + pSvgH / 2})">${pH} cm</text>`;
+
+            document.getElementById('wallSvg').innerHTML = svg;
+
+            // Update results
+            const area = (pW * pH / 10000).toFixed(2);
+            const price = Math.round(area * PRICE_PER_SQM);
+            document.getElementById('displayArea').textContent = area;
+            document.getElementById('displayPrice').textContent = '$' + price.toLocaleString('en-US');
+
+            // Update quote link
+            document.getElementById('quoteLink').href = `./quote.html?width=${pW}&height=${pH}`;
+
+            // Attach drag handlers
+            setupDrag();
+        }
+
+        function setupDrag() {
+            const group = document.getElementById('paintingGroup');
+            if (!group) return;
+            group.onmousedown = function(e) {
+                dragPainting = true;
+                const svg = document.getElementById('wallSvg');
+                const pt = svg.createSVGPoint();
+                pt.x = e.clientX; pt.y = e.clientY;
+                const ctm = group.getScreenCTM();
+                const svgPt = pt.matrixTransform(ctm.inverse());
+                dragStartX = svgPt.x;
+                dragStartY = svgPt.y;
+                group.style.cursor = 'grabbing';
+                e.preventDefault();
+            };
+        }
+
+        document.addEventListener('mousemove', function(e) {
+            if (!dragPainting) return;
+            const svg = document.getElementById('wallSvg');
+            const group = document.getElementById('paintingGroup');
+            if (!svg || !group) return;
+            const pt = svg.createSVGPoint();
+            pt.x = e.clientX; pt.y = e.clientY;
+            const ctm = group.getScreenCTM();
+            const svgPt = pt.matrixTransform(ctm.inverse());
+            const dx = svgPt.x - dragStartX, dy = svgPt.y - dragStartY;
+
+            const wallW = parseInt(document.getElementById('wallWidth').value) || 300;
+            const wallH = parseInt(document.getElementById('wallHeight').value) || 260;
+            const pW = parseInt(document.getElementById('paintingW').value) || 80;
+            const pH = parseInt(document.getElementById('paintingH').value) || 120;
+            const svgW = 600, svgH = 520;
+            const padding = 60;
+            const scale = Math.min((svgW - padding * 2) / wallW, (svgH - padding * 2) / wallH);
+            const wallSvgW = wallW * scale, wallSvgH = wallH * scale;
+            const wallX = (svgW - wallSvgW) / 2, wallY = (svgH - wallSvgH) / 2;
+            const pSvgW = pW * scale, pSvgH = pH * scale;
+
+            paintingX += dx; paintingY += dy;
+            paintingX = Math.max(wallX, Math.min(wallX + wallSvgW - pSvgW, paintingX));
+            paintingY = Math.max(wallY, Math.min(wallY + wallSvgH - pSvgH, paintingY));
+
+            group.setAttribute('transform', `translate(${dx},${dy})`);
+            dragStartX = svgPt.x; dragStartY = svgPt.y;
+
+            // Update size labels
+            const labels = svg.querySelectorAll('text');
+            if (labels.length >= 2) {
+                labels[labels.length - 2].setAttribute('x', paintingX + pSvgW / 2);
+                labels[labels.length - 2].setAttribute('y', paintingY - 8);
+                labels[labels.length - 1].setAttribute('x', paintingX - 8);
+                labels[labels.length - 1].setAttribute('y', paintingY + pSvgH / 2);
+            }
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (dragPainting) {
+                dragPainting = false;
+                const group = document.getElementById('paintingGroup');
+                if (group) { group.style.cursor = 'grab'; group.removeAttribute('transform'); }
+                updatePreview();
+            }
+        });
+
+        // Init
+        document.addEventListener('DOMContentLoaded', updatePreview);
+    </script>
+</body>
+</html>
