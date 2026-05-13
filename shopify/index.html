@@ -312,10 +312,14 @@
             overflow: hidden;
         }
 
-        .preview-empty { text-align: center; padding: 60px 40px; }
+        .preview-empty { text-align: center; padding: 60px 40px; cursor: pointer; transition: opacity 0.2s; }
+        .preview-empty:hover { opacity: 0.85; }
         .preview-empty .icon { font-size: 48px; opacity: 0.4; margin-bottom: 16px; }
         .preview-empty h4 { font-family: 'Cormorant Garamond', serif; font-size: 20px; margin-bottom: 8px; color: #fff; }
         .preview-empty p { font-size: 13px; color: #888; }
+        .preview-empty p.drop-hint { font-size: 12px; color: #666; margin-top: 12px; }
+        .preview-area.drag-over .preview-empty { opacity: 0.7; }
+        .preview-area.drag-over { outline: 2px dashed var(--accent-light); outline-offset: -4px; }
 
         .preview-main { display: none; position: relative; width: 100%; }
         .preview-main.show { display: block; }
@@ -627,6 +631,7 @@
                             <div class="icon">🖼️</div>
                             <h4>Upload Your Room</h4>
                             <p>Upload your room photo<br>to preview how it looks</p>
+                            <p class="drop-hint">Click · Drag &amp; Drop · Ctrl+V Paste</p>
                         </div>
                         <div class="preview-main" id="previewMain">
                             <canvas id="canvas"></canvas>
@@ -769,6 +774,7 @@
         const generateBtn = document.getElementById('generateBtn');
 
         const emptyState = document.getElementById('emptyState');
+        const previewArea = document.querySelector('.preview-area');
         const previewMain = document.getElementById('previewMain');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -1125,6 +1131,42 @@
 
         uploadZone.addEventListener('click', () => roomInput.click());
         paintingZone.addEventListener('click', () => paintingInput.click());
+
+        // Preview area: click to upload
+        emptyState.addEventListener('click', () => roomInput.click());
+
+        // Drag & drop on preview area
+        ['dragenter', 'dragover'].forEach(evt => {
+            previewArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                previewArea.classList.add('drag-over');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            previewArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                previewArea.classList.remove('drag-over');
+            });
+        });
+        previewArea.addEventListener('drop', (e) => {
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) handleRoomImage(file);
+        });
+
+        // Ctrl+V / Cmd+V paste
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    e.preventDefault();
+                    handleRoomImage(item.getAsFile());
+                    return;
+                }
+            }
+        });
 
         roomInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
