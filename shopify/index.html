@@ -227,45 +227,16 @@
         .upload-zone {
             border: 2px dashed var(--border);
             border-radius: var(--radius);
-            padding: 22px;
+            padding: 32px 22px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
         }
-        .upload-zone:hover { border-color: var(--accent); background: var(--accent-soft); }
-        .upload-zone .icon { font-size: 26px; margin-bottom: 6px; }
-        .upload-zone p { font-size: 13px; color: var(--text-secondary); }
-        .upload-zone .browse { color: var(--accent); font-weight: 500; }
-
-        .api-box {
-            margin: 16px 0 10px;
-            padding: 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: var(--surface-raised);
-        }
-        .api-box .api-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 8px;
-        }
-        .api-box .api-help {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 6px;
-        }
-        .api-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        .api-status {
-            margin-top: 8px;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
+        .upload-zone:hover { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-1px); }
+        .upload-zone .icon { font-size: 32px; margin-bottom: 8px; }
+        .upload-zone p { font-size: 14px; color: var(--text-secondary); }
+        .upload-zone .browse { color: var(--accent); font-weight: 600; text-decoration: underline; }
+        .upload-zone .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
         .more-toggle {
             display: flex;
@@ -603,22 +574,14 @@
                             <label>Upload Room Photo</label>
                             <div class="upload-zone" id="uploadZone">
                                 <div class="icon">📷</div>
-                                <p>Upload room photo<br><span class="browse">Choose File</span></p>
+                                <p>Upload room photo</p>
+                                <p class="browse">Click to Choose File</p>
+                                <p class="hint">JPG/PNG, the clearer the better</p>
                             </div>
                             <input type="file" id="roomInput" accept="image/*" style="display:none">
                         </div>
 
-                        <div class="api-box">
-                            <div class="api-title">AI Key</div>
-                            <input type="password" id="apiKeyInput" placeholder="输入用于房间分析的 API Key">
-                            <div class="api-actions">
-                                <button class="manual-reset primary" id="saveApiKeyBtn" type="button">Save Locally</button>
-                                <button class="manual-reset" id="clearApiKeyBtn" type="button">Clear</button>
-                            </div>
-                            <div class="api-status" id="apiStatus">No AI Key. Using default placement.</div>
-                            <div class="api-help">Keys are stored only in your local browser.</div>
-                        </div>
-
+                        
                         <div class="more-toggle" id="moreToggle">
                             <span>Frame &amp; Image</span>
                             <span class="arrow">▼</span>
@@ -637,8 +600,11 @@
                             </div>
                             <div class="form-group">
                                 <label>Artwork Image (optional)</label>
-                                <div class="upload-zone" id="paintingZone" style="padding:16px">
-                                    <p>Upload artwork<br><span class="browse">Choose File</span></p>
+                                <div class="upload-zone" id="paintingZone">
+                                    <div class="icon">🖼️</div>
+                                    <p>Upload artwork image</p>
+                                    <p class="browse">Click to Choose File</p>
+                                    <p class="hint">Your painting to preview on wall</p>
                                 </div>
                                 <input type="file" id="paintingInput" accept="image/*" style="display:none">
                             </div>
@@ -730,7 +696,6 @@
 
     <script>
         // Config
-        const API_STORAGE_KEY = 'yida-art-api-key';
         const SCENE_RATIOS = {
             livingRoom: { long: 0.3, square: 0.35, landscape: 0.618 },
             bedroom: { long: 0.25, square: 0.30, landscape: 0.618 },
@@ -796,10 +761,6 @@
         const wallHeightInput = document.getElementById('wallHeight');
         const uploadZone = document.getElementById('uploadZone');
         const roomInput = document.getElementById('roomInput');
-        const apiKeyInput = document.getElementById('apiKeyInput');
-        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
-        const clearApiKeyBtn = document.getElementById('clearApiKeyBtn');
-        const apiStatus = document.getElementById('apiStatus');
         const moreToggle = document.getElementById('moreToggle');
         const moreContent = document.getElementById('moreContent');
         const frameColors = document.querySelectorAll('.frame-color');
@@ -842,7 +803,6 @@
         let aiResult = null;
         let recommendedSize = null;
         let manualAdjust = { offsetX: 0, offsetY: 0, scale: 1 };
-        let runtimeApiKey = '';
         let calibration = {
             active: false,
             points: [],
@@ -851,57 +811,14 @@
         let dragState = { active: false, startX: 0, startY: 0, startOffsetX: 0, startOffsetY: 0 };
 
         function getApiKey() {
-            const inputValue = apiKeyInput.value.trim();
-            return inputValue || runtimeApiKey;
+            return '';
         }
 
-        function maskApiKey(key) {
-            if (!key) return '未配置';
-            if (key.length <= 10) return key;
-            return `${key.slice(0, 4)}...${key.slice(-4)}`;
-        }
 
-        function updateApiStatus() {
-            const key = getApiKey();
-            apiStatus.textContent = key
-                ? `已配置 AI Key：${maskApiKey(key)}`
-                : '未配置 AI Key，当前只能生成默认位置。';
-        }
 
-        function saveApiKey() {
-            const key = apiKeyInput.value.trim();
-            runtimeApiKey = key;
-            try {
-                if (key) {
-                    localStorage.setItem(API_STORAGE_KEY, key);
-                } else {
-                    localStorage.removeItem(API_STORAGE_KEY);
-                }
-            } catch (err) {
-                console.warn('Failed to persist api key:', err);
-            }
-            updateApiStatus();
-        }
 
-        function clearApiKey() {
-            runtimeApiKey = '';
-            apiKeyInput.value = '';
-            try {
-                localStorage.removeItem(API_STORAGE_KEY);
-            } catch (err) {
-                console.warn('Failed to clear api key:', err);
-            }
-            updateApiStatus();
-        }
 
-        function loadApiKey() {
-            try {
-                runtimeApiKey = localStorage.getItem(API_STORAGE_KEY) || '';
-            } catch (err) {
-                runtimeApiKey = '';
-            }
-            updateApiStatus();
-        }
+
 
         function getDefaultWallRegion() {
             const base = DEFAULT_WALL_REGIONS[currentScene] || DEFAULT_WALL_REGIONS.livingRoom;
@@ -1208,9 +1125,6 @@
 
         uploadZone.addEventListener('click', () => roomInput.click());
         paintingZone.addEventListener('click', () => paintingInput.click());
-        saveApiKeyBtn.addEventListener('click', saveApiKey);
-        clearApiKeyBtn.addEventListener('click', clearApiKey);
-        apiKeyInput.addEventListener('change', saveApiKey);
 
         roomInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -1713,7 +1627,6 @@
             }
         });
 
-        loadApiKey();
         updateRecommendation();
         updateManualLabels();
         console.log('Script initialized');
