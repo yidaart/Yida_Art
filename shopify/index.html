@@ -11,7 +11,7 @@
             --surface: #ffffff;
             --surface-raised: #faf9f7;
             --text: #1a1a1a;
-            --text-secondary: #666;
+            --text-secondary: #555;
             --text-muted: #999;
             --accent: #8b5a2b;
             --accent-light: #c49a6c;
@@ -80,11 +80,30 @@
             gap: 28px;
         }
 
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            header {
+                padding: 14px 20px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .container {
+                padding: 20px 16px;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .card {
             background: var(--surface);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
+            transition: box-shadow 0.2s;
         }
+        .card:hover { box-shadow: var(--shadow-lg); }
 
         .card-header {
             padding: 18px 22px;
@@ -112,7 +131,7 @@
 
         label {
             display: block;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.08em;
@@ -149,7 +168,7 @@
         .scene-btn:hover { border-color: var(--accent-light); }
         .scene-btn.active { border-color: var(--accent); background: var(--accent-soft); }
         .scene-btn .icon { font-size: 18px; display: block; margin-bottom: 2px; }
-        .scene-btn .label { font-size: 11px; color: var(--text-secondary); }
+        .scene-btn .label { font-size: 12px; color: var(--text-secondary); }
         .scene-btn.active .label { color: var(--accent); font-weight: 500; }
 
         .style-grid {
@@ -187,7 +206,7 @@
         .result-box .unit { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
         .result-box .hang-height { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
         .result-box .formula-note {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
             margin-top: 8px;
         }
@@ -232,7 +251,7 @@
             margin-bottom: 8px;
         }
         .api-box .api-help {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
             margin-top: 6px;
         }
@@ -244,7 +263,7 @@
         }
         .api-status {
             margin-top: 8px;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
         }
 
@@ -305,7 +324,7 @@
         }
         .preview-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 16px; }
         .status {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
             background: var(--surface-raised);
             padding: 4px 12px;
@@ -374,6 +393,14 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading-text { font-size: 14px; color: #fff; }
+        .loading-overlay.error { background: rgba(180,40,40,0.92); }
+        .loading-overlay.error .spinner { display: none; }
+        .loading-overlay.error .retry-btn {
+            display: inline-block; margin-top: 14px; padding: 8px 20px;
+            background: #fff; color: #b42828; border: none; border-radius: 6px;
+            font-size: 13px; font-weight: 500; cursor: pointer;
+        }
+        .retry-btn { display: none; }
 
         .ai-suggestion {
             position: absolute;
@@ -393,7 +420,7 @@
         .ai-suggestion .meta {
             margin-top: 6px;
             color: var(--text-secondary);
-            font-size: 11px;
+            font-size: 12px;
         }
 
         .manual-panel {
@@ -419,7 +446,7 @@
             color: var(--text);
         }
         .manual-hint {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
             margin-bottom: 8px;
         }
@@ -430,7 +457,7 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 4px;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
         }
         .slider-group input[type="range"] {
@@ -450,7 +477,7 @@
             color: var(--text-secondary);
             border-radius: 999px;
             padding: 6px 10px;
-            font-size: 11px;
+            font-size: 12px;
             cursor: pointer;
         }
         .manual-reset:hover {
@@ -692,6 +719,7 @@
                             <div class="loading-overlay hidden" id="loadingOverlay">
                                 <div class="spinner"></div>
                                 <div class="loading-text" id="loadingText">Generating preview...</div>
+                                <button class="retry-btn" id="retryBtn" onclick="generateEffect()">Try Again</button>
                             </div>
                         </div>
                     </div>
@@ -1262,6 +1290,7 @@
                 }
             } catch (err) {
                 console.warn('AI 分析失败，使用默认位置：', err);
+                showError('AI analysis unavailable. Using default placement.');
                 aiResult = {
                     wall: getDefaultWallRegion(),
                     description: 'AI 分析不可用，已使用默认位置',
@@ -1269,6 +1298,7 @@
                 };
                 renderPreview();
                 statusText.textContent = '效果图已生成（AI 降级）';
+                setTimeout(hideLoading, 2000);
             } finally {
                 hideLoading();
             }
@@ -1528,7 +1558,13 @@
         }
 
         function hideLoading() {
+            loadingOverlay.classList.remove('error');
             loadingOverlay.classList.add('hidden');
+        }
+        function showError(text) {
+            loadingText.textContent = text;
+            loadingOverlay.classList.add('error');
+            loadingOverlay.classList.remove('hidden');
         }
 
         generateBtn.addEventListener('click', () => {
